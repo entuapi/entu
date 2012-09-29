@@ -1,0 +1,60 @@
+{% extends '../main/index.html' %}
+
+{% block logo_url %}/entity{% end %}
+{% block fluid %}-fluid{% end %}
+
+{% block left_toolbar %}
+    {% if show_list %}
+        <li id="list_search"><input type="search" id="searchbox" class="search-query" placeholder="{{ _('search_placeholder') }}" /><span></span></li>
+    {% end %}
+    <ul id="toolbar" class="nav">
+    </ul>
+{% end %}
+
+{% block right_toolbar %}
+    <li class="toolbar-item"><a href="" style="padding:5px 5px 5px 10px;">{{ current_user.name }}<img src="{{ current_user.picture }}" style="margin-left:10px; height:40px; width:40px;" /></a></li>
+    <li class="toolbar-item"><a href="/exit" style="width:30px;" title="{{ _('menu_exit') }}"><i class="icon-off"></i></a></li>
+{% end %}
+
+{% block content %}
+    <div class="container-fluid">
+        <div id="menu">
+            <div id="menu_accordion" class="accordion">
+                {% for m in menu %}
+                    <h3><a href="#">{{ m['label'] }}</a></h3>
+                    <div>
+                        {% for i in m['items'] %}
+                            <a href="/entity/{{ i['keyname'] }}">{{ i['title'] }}</a>
+                        {% end %}
+                    </div>
+                {% end %}
+            </div>
+        </div>
+        {% if show_list %}
+            {% include 'list.html'%}
+            <div id="content">
+            </div>
+        {% else %}
+            <div id="content-wide">
+            </div>
+        {% end %}
+    </div>
+
+    <script>
+        $(document).ready(function(){
+
+            $(".accordion").accordion({
+                fillSpace: true,
+                navigation: true,
+            });
+            $("#menu").find("a[href='"+window.location.pathname+"']").each(function(){
+                $(this).addClass("active")
+            })
+
+            $(window).resize(function(){
+                $('#menu_accordion').accordion('resize');
+            });
+
+        });
+    </script>
+{% end %}
