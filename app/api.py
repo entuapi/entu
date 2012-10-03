@@ -9,7 +9,7 @@ class Search ():
     def get(self):
         print "Hello search!";
         # TODO rest
-class Open ():
+class Open (myRequestHandler):
     """
     API open entity function.
     Needs entity ID.
@@ -47,4 +47,5 @@ class Edit ():
         
 handlers = [
     ('/add', Add),
+    ('/open', Open),
 ]
