@@ -1886,13 +1886,13 @@ def createSQL(host):
     output.close()
 
 def getDBconf():
-    map = {}
+    d = {}
     input = open('sql/db.conf')
     lines = map(lambda x : x[:-1].split(':'),input.readlines())
     input.close()
     for line in lines:
-        map[line[0]] = line[1]        
-    return map
+        d[line[0]] = line[1]        
+    return d
 
 
 
