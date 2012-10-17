@@ -120,7 +120,7 @@ class Edit (myRequestHandler):
    
     def post(self):
         raise web.HTTPError(405,'Currently using GET method.')
-        
+
         
 handlers = [
     ('/add', Add),
