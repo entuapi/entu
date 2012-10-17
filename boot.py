@@ -1844,8 +1844,8 @@ grant all on entudb.* to entuapp@'%%' identified by '0000';
 grant all on entudb.* to entuapp@'%s' identified by '0000';
 flush privileges;
 use entudb;
-source '%s/sql/create_tables.sql';
-source '%s/sql/setup.sql';
+source %s/sql/create_tables.sql;
+source %s/sql/setup.sql;
 insert into app_settings (keyname,value) values ('default_path','/entu');
 insert into app_settings (keyname, value) values ('default_language','et');
 """
