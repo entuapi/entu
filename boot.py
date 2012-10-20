@@ -1880,7 +1880,7 @@ def createStarter(env_address):
     output.close()
 
 def createSQL(host):
-    path = os.path.realpath(__file__)
+    path = os.path.dirname(os.path.realpath(__file__))
     output = open('sql/entu.sql','w')
     output.write(SQL_SCRIPT%(host,path,path))
     output.close()
@@ -1888,7 +1888,7 @@ def createSQL(host):
 def getDBconf():
     d = {}
     input = open('sql/db.conf')
-    lines = map(lambda x : x[:-1].split(':'),input.readlines())
+    lines = map(lambda x : x.rstrip('\n').split(':'),input.readlines())
     input.close()
     for line in lines:
         d[line[0]] = line[1]        

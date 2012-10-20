@@ -23,7 +23,7 @@ class Search (myRequestHandler):
         full_definition = False
         public = True if self.get_argument('public','0') == '1' else False
         
-        entity = db.Entity(user_locale=self.get_user_locale(),user_id = self.current_user.id)
+        entity = db.Entity(user_locale=self.get_user_locale())
         
         result = entity.get(ids_only=ids_only,entity_id=entity_id,search=keywords,
                             entity_definition_keyname=entity_definition,dataproperty=dataproperty,limit=limit,
@@ -56,7 +56,7 @@ class View (myRequestHandler):
     TODO MAYBE needs public/non-public???
     """
     def get(self):
-        entity = db.Entity(user_locale=self.get_user_locale(),user_id = self.current_user.id)
+        entity = db.Entity(user_locale=self.get_user_locale())
         
         self.write(entity.get(entity_id=self.get_argument('id'), limit=1, full_definition=True, only_public=False))
         self.write("Open: Done.\n")
@@ -74,10 +74,10 @@ class Add (myRequestHandler):
         parent_entity_id            = self.get_argument('parent_entity_id', default=None, strip=True)
         entity_definition_keyname   = self.get_argument('entity_definition_keyname', default=None, strip=True)
         
-        if entity_definition == None:
+        if entity_definition_keyname == None:
             raise web.HTTPError(400,'Entity type required.')
         
-        entity = db.Entity(user_locale=self.get_user_locale(),user_id = self.current_user.id)
+        entity = db.Entity(user_locale=self.get_user_locale())
         
         entity_id = entity.create(entity_definition_keyname=entity_definition_keyname, parent_entity_id=parent_entity_id)
         
