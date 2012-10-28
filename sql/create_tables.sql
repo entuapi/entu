@@ -19,7 +19,7 @@ CREATE TABLE `user` (
   `picture` varchar(200) COLLATE utf8_estonian_ci DEFAULT NULL,
   `language` varchar(10) COLLATE utf8_estonian_ci DEFAULT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 -- Create syntax for TABLE 'user_profile'
 CREATE TABLE `user_profile` (
@@ -41,7 +41,7 @@ CREATE TABLE `user_profile` (
   UNIQUE KEY `provider` (`provider`,`provider_id`),
   KEY `user_id` (`user_id`),
   CONSTRAINT `user_profile_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 -- Create syntax for TABLE 'file'
 CREATE TABLE `file` (
@@ -58,7 +58,7 @@ CREATE TABLE `file` (
   `old_id` varchar(767) CHARACTER SET ascii COLLATE ascii_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `old_id` (`old_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 -- Create syntax for TABLE 'tmp_file'
 CREATE TABLE `tmp_file` (
@@ -69,7 +69,7 @@ CREATE TABLE `tmp_file` (
   `filesize` int(13) unsigned DEFAULT NULL,
   `file` longblob,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=100 DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 -- Create syntax for TABLE 'counter'
 CREATE TABLE `counter` (
@@ -88,7 +88,7 @@ CREATE TABLE `counter` (
   `old_id` varchar(200) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `old_id` (`old_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 -- Create syntax for TABLE 'entity_definition'
 CREATE TABLE `entity_definition` (
@@ -100,6 +100,7 @@ CREATE TABLE `entity_definition` (
   `deleted` datetime DEFAULT NULL,
   `deleted_by` varchar(100) COLLATE utf8_estonian_ci DEFAULT NULL,
   `ordinal` int(11) DEFAULT NULL,
+  `open_after_add` tinyint(1) NOT NULL DEFAULT '0',
   `public_path` varchar(100) COLLATE utf8_estonian_ci DEFAULT NULL,
   `estonian_label` varchar(500) COLLATE utf8_estonian_ci DEFAULT NULL,
   `estonian_label_plural` varchar(500) COLLATE utf8_estonian_ci DEFAULT NULL,
@@ -120,7 +121,7 @@ CREATE TABLE `entity_definition` (
   `english_displaytable` varchar(500) COLLATE utf8_estonian_ci DEFAULT NULL,
   `english_sort` varchar(500) COLLATE utf8_estonian_ci DEFAULT NULL,
   `actions_add` varchar(100) COLLATE utf8_estonian_ci DEFAULT NULL,
-  `old_id` varchar(100) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
+  `old_id` varchar(200) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
   PRIMARY KEY (`keyname`),
   UNIQUE KEY `keyname` (`keyname`),
   UNIQUE KEY `old_id` (`old_id`),
@@ -138,12 +139,14 @@ CREATE TABLE `entity` (
   `deleted` datetime DEFAULT NULL,
   `deleted_by` varchar(100) COLLATE utf8_estonian_ci DEFAULT NULL,
   `public` tinyint(1) unsigned NOT NULL DEFAULT '0',
+  `sort` varchar(100) CHARACTER SET utf8 DEFAULT NULL,
   `old_id` varchar(200) CHARACTER SET utf8 COLLATE utf8_bin DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `old_id` (`old_id`),
   KEY `entity_definition_keyname` (`entity_definition_keyname`),
+  KEY `sort` (`sort`),
   CONSTRAINT `e_fk_ed` FOREIGN KEY (`entity_definition_keyname`) REFERENCES `entity_definition` (`keyname`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 -- Create syntax for TABLE 'relationship_definition'
 CREATE TABLE `relationship_definition` (
@@ -250,7 +253,7 @@ CREATE TABLE `relationship` (
   CONSTRAINT `r_fk_pd` FOREIGN KEY (`property_definition_keyname`) REFERENCES `property_definition` (`keyname`) ON UPDATE CASCADE,
   CONSTRAINT `r_fk_rd` FOREIGN KEY (`relationship_definition_keyname`) REFERENCES `relationship_definition` (`keyname`) ON UPDATE CASCADE,
   CONSTRAINT `r_fk_rpd` FOREIGN KEY (`related_property_definition_keyname`) REFERENCES `property_definition` (`keyname`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=744 DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 -- Create syntax for TABLE 'property'
 CREATE TABLE `property` (
@@ -294,6 +297,6 @@ CREATE TABLE `property` (
   CONSTRAINT `property_ibfk_6` FOREIGN KEY (`relationship_id`) REFERENCES `relationship` (`id`),
   CONSTRAINT `property_ibfk_7` FOREIGN KEY (`value_entity`) REFERENCES `entity` (`id`),
   CONSTRAINT `p_fk_pd` FOREIGN KEY (`property_definition_keyname`) REFERENCES `property_definition` (`keyname`) ON UPDATE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7771 DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_estonian_ci;
 
 
