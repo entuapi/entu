@@ -11,15 +11,21 @@
 *
 *    Example:
 *        python http_test.py suit1 '>>'
+*
+*
+*    // To try editing property of entity: set conf_file='testsuits/edit_property.conf' and then run
+*        python http_test.py testsuits/edit_property '>>'
+*
 """
 
 import urllib
 import sys
-from time import gmtime,strftime
+from time import gmtime, strftime
+
+conf_file = 'http_test.conf'
 
 output_name = strftime("archive/test_%Y-%m-%d___%H-%M-%S")
-
-output = open(output_name,'w')
+output = open(output_name, 'w')
 
 output.write("Failed at:\n\n- - - - - - - - - - - - - - - - - - -\n\n")
 
@@ -27,7 +33,7 @@ failures = 0
 
 handler_to_method = {}
 
-config = open('http_test.conf','r')
+config = open(conf_file, 'r')
 config_entries = map(lambda entry: entry.rstrip('\n').split(':'),config.readlines())
 
 for entry in config_entries:
