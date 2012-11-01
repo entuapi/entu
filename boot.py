@@ -1847,7 +1847,7 @@ use entudb;
 source %s/sql/create_tables.sql;
 source %s/sql/setup.sql;
 insert into app_settings (keyname,value) values ('default_path','/entu');
-insert into app_settings (keyname, value) values ('default_language','et');
+insert into app_settings (keyname, value) values ('default_language','estonian');
 """
 
 

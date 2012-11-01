@@ -5,64 +5,79 @@ import json
 
 class Search (myRequestHandler):
     """
-    API search for entities based on keywords,entity definition,
-    dataproperty [and entity properties - not implemented].
-   
-    Returns entity ids if there are more than 5 query results or otherwise
-    respective amount of full entities in json format.
-   
+    API search for entities based on keywords,entity type and
+    dataproperty.
+    
     """
     def get(self):
        
-       ids_only = False
-       entity_id = None
-       keywords = self.get_argument('keywords', None)
-       entity_definition = self.get_argument('entity_type', None)
-       dataproperty = self.get_argument('dataproperty', None)
-       limit = self.get_argument('limit', None)
-       full_definition = False
-       public = True if self.get_argument('public', '0') == '1' else False
+        ids_only = False
+        full_info = self.get_argument('full_info',None)
+        entity_id = None
+        keywords = self.get_argument('keywords', None)
+        entity_definition = self.get_argument('entity_type', None)
+        dataproperty = self.get_argument('dataproperty', None)
+        limit = self.get_argument('limit', None)
+        full_definition = False
+        public = True if self.get_argument('public', '0') == '1' else False
+              
+        entity = db.Entity(user_locale=self.get_user_locale())
+        
+        result = entity.get(ids_only=ids_only, entity_id=entity_id, search=keywords,
+                            entity_definition_keyname=entity_definition, dataproperty=dataproperty, limit=limit,
+                            full_definition=full_definition, only_public=public)
        
-       entity = db.Entity(user_locale=self.get_user_locale())
+        if not result:
+            return self.missing()
        
-       result = entity.get(ids_only=ids_only, entity_id=entity_id, search=keywords,
-                           entity_definition_keyname=entity_definition, dataproperty=dataproperty, limit=limit,
-                           full_definition=full_definition, only_public=public)
-       
-       if not result:
-           return self.missing()
-       elif size(result) <= 5:
-           self.write(json.dumps(result))
-       else:
-           entity_ids = []
-           for entity in result:
-               entity_obj = {}
-               entity_obj['id'] = entity['id']
-               entity_obj['title'] = entity['displayname']
-               entity_obj['info'] = entity['displayinfo']
-               entity_obj['image'] = entity['displaypicture']
-               entity_ids.append(entity_obj)
-           self.write(json.dumps(entity_ids))
-           
+        datetime_to_ISO8601(result)
+              
+        if not full_info:
+            entity_ids = []
+            for entity in result:
+                entity_obj = {}
+                entity_obj['id'] = entity['id']
+                entity_obj['displayname'] = entity['displayname']
+                entity_obj['displayinfo'] = entity['displayinfo']
+                entity_obj['displaypicture'] = entity['displaypicture']
+                entity_obj['displaytable'] = entity['displaytable']
+                entity_ids.append(entity_obj)
+            self.write(json.dumps(entity_ids))
+
+        else:
+            self.write(json.dumps(result))
+
+
     def post(self):
-       raise web.HTTPError(405, 'POST method not supported.')
+        raise web.HTTPError(405, 'POST method not supported.')
 
        
        
 class View (myRequestHandler):
     """
-    API open entity function.
-    Needs entity ID.
-    TODO MAYBE needs public/non-public???
-    """
+    Returns entity by entity_id.
+    """    
     def get(self):
-       entity = db.Entity(user_locale=self.get_user_locale())
+        entity = db.Entity(user_locale=self.get_user_locale())
+        
+        entity_id = self.get_argument('id',None)
        
-       self.write(entity.get(entity_id=self.get_argument('id'), limit=1, full_definition=True, only_public=False))
-       self.write("Open: Done.\n")
+        if not entity_id:
+            raise web.HTTPError(400,'Entity ID required.')
+       
+        only_public = True if self.get_argument('public', '0') == '1' else False
+       
+        result = entity.get(entity_id=self.get_argument('id'), limit=1, full_definition=True, only_public=False)
+       
+        if not result:
+            return self.missing()
+       
+        datetime_to_ISO8601(result)
+       
+        self.write(json.dumps(result))
        
     def post(self):
-       raise web.HTTPError(405, 'POST method not supported.')
+        raise web.HTTPError(405, 'POST method not supported.')
      
      
 class Save(myRequestHandler):
@@ -179,7 +194,18 @@ class Auth (myRequestHandler):
 
     def post(self):
        raise web.HTTPError(401, 'Unauthorized')
-       
+
+def datetime_to_ISO8601(entity_list):
+    """
+        Transforms each entity's ordinal field into string format specified by ISO 8601
+    """
+    if type(entity_list) is not list:
+        entity_list = [entity_list]
+        
+    for entity in entity_list:
+           datetime_obj = entity['ordinal']
+           entity['ordinal'] = "%d%d%dT%d%d%d"%(datetime_obj.year,datetime_obj.month,datetime_obj.day,
+                                                datetime_obj.hour,datetime_obj.minute,datetime_obj.second)
        
 handlers = [
     ('/add', Add),
