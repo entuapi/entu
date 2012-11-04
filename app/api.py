@@ -80,106 +80,55 @@ class View (myRequestHandler):
         raise web.HTTPError(405, 'POST method not supported.')
      
      
-class Save(myRequestHandler):
+class SaveEntity(myRequestHandler):
     """
-    API add and edit entity combinated functions
-    """
-    def get(self):
-       entity_id = self.get_argument('entity_id', default=None, strip=True)
-       entity = db.Entity(user_locale=self.get_user_locale())
-       
-       """
-       If there is no entity_id given, then create new Entity
-       """
-       if not entity_id:
-           parent_entity_id = self.get_argument('parent_entity_id', default=None, strip=True)
-           entity_definition_keyname = self.get_argument('entity_definition_keyname', default=None, strip=True)
-       
-           if entity_definition_keyname != None:
-               entity_id = entity.create(entity_definition_keyname=entity_definition_keyname, parent_entity_id=parent_entity_id)
-               self.write({
-                   'entity_id':entity_id
-               })
-           else:
-               raise web.HTTPError(400, 'Entity ID required. To create new Entity, entity_definition_keyname is required.')
-       
-       """
-       Save property value. Creates new one if property_id = None. Returns property ID.
-       """
-       property_definition_keyname = self.get_argument('property_definition_keyname', default=None, strip=True)
-       property_id = self.get_argument('value_id', default=None, strip=True)
-       value = self.get_argument('value', default=None, strip=True)
-       is_counter = self.get_argument('counter', default='false', strip=True)
-       is_public = self.get_argument('is_public', default='false', strip=True)
-       uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
-       
-       property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)    
-       
-       if property_id:
-           self.write({
-                   'property_id':property_id
-               })
-       
-       
-    def post(self):
-       raise web.HTTPError(405, 'Currently using GET method.')
-  
-class Add (myRequestHandler):
-    """
-    API add entity function.
+    API save entity function.
     Needs entity ID and optionally parent ID.
+    Return Entity ID.
     """
     def get(self):
-       
+       entity = db.Entity(user_locale=self.get_user_locale())
        parent_entity_id = self.get_argument('parent_entity_id', default=None, strip=True)
        entity_definition_keyname = self.get_argument('entity_definition_keyname', default=None, strip=True)
-       
-       if entity_definition_keyname == None:
-           raise web.HTTPError(400, 'Entity type required.')
-       
-       entity = db.Entity(user_locale=self.get_user_locale())
-       
-       entity_id = entity.create(entity_definition_keyname=entity_definition_keyname, parent_entity_id=parent_entity_id)
-       
-       self.write({
-           'entity_id':entity_id
-       })
-       
-       
+      
+       if entity_definition_keyname != None:
+           entity_id = entity.create(entity_definition_keyname=entity_definition_keyname, parent_entity_id=parent_entity_id)
+           self.write({
+               'entity_id':entity_id
+           })
+       else:
+           raise web.HTTPError(400, 'To create new Entity entity_definition_keyname is required.')
+      
     def post(self):
-       raise web.HTTPError(405, 'Currently using GET method.')
-       
-class Edit (myRequestHandler):
+      raise web.HTTPError(405, 'Currently using GET method.')
+
+class SaveProperty(myRequestHandler):  
     """
-    API edit entity function.
-   
+    Add or edit property value.
+    Creates new one if property_id = None, otherwise changes existing.
+    Returns property ID.
     """
     def get(self):
-       entity_id = self.get_argument('entity_id', default=None, strip=True)
-       
-       property_definition_keyname = self.get_argument('property_definition_keyname', default=None, strip=True)
-       property_id = self.get_argument('value_id', default=None, strip=True)
-       value = self.get_argument('value', default=None, strip=True)
-       is_counter = self.get_argument('counter', default='false', strip=True)
-       is_public = self.get_argument('is_public', default='false', strip=True)
-       uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
-       
-       if not entity_id:
-           raise web.HTTPError(400, 'Entity ID required.')
-       
-       entity = db.Entity(user_locale=self.get_user_locale())
-       
-       if is_counter.lower() == 'true':
-           value = entity.set_counter(entity_id=entity_id)
-       elif is_public.lower() == 'true':
-           value = True if value.lower() == 'true' else False
-           value = entity.set_public(entity_id=entity_id, is_public=value)
-       else:
-           property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)
-
-  
+      entity_id = self.get_argument('entity_id', default=None, strip=True)
+      property_definition_keyname = self.get_argument('property_definition_keyname', default=None, strip=True)
+      property_id = self.get_argument('value_id', default=None, strip=True)
+      value = self.get_argument('value', default=None, strip=True)
+      is_counter = self.get_argument('counter', default='false', strip=True)
+      is_public = self.get_argument('is_public', default='false', strip=True)
+      uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
+      
+      entity = db.Entity(user_locale=self.get_user_locale())
+      if entity_id:
+          property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)    
+          self.write({
+                      'property_id':property_id
+          })
+      else:
+          raise web.HTTPError(400, 'Entity ID required')
+      
+          
     def post(self):
-       raise web.HTTPError(405, 'Currently using GET method.')
+      raise web.HTTPError(405, 'Currently using GET method.')
 
 class Auth (myRequestHandler):
     """
@@ -208,10 +157,9 @@ def datetime_to_ISO8601(entity_list):
                                                 datetime_obj.hour,datetime_obj.minute,datetime_obj.second)
        
 handlers = [
-    ('/add', Add),
+    ('/save_entity', SaveEntity),
     ('/view', View),
     ('/search', Search),
-    ('/edit', Edit),
+    ('/save_property', SaveProperty),
     ('/auth', Auth),
-    ('/save', Save),
 ]
