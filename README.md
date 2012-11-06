@@ -1,72 +1,53 @@
-# Entu
+# Entu API
 
-_Futuristic Data Management System with emphasis on educational institutions_
+_API for Entu (Entu is futuristic object database framework) which lets you search, view, add and modify entities(objects)_
 
 
-## Key features
-
-* It stores data in Entities (objects) and Entities have (text, numeric, date, file, …) properties
-* Entities are fully customizable
-    * what properties to show as name, description, etc
-    * what properties to show in relation table
-    * what properties to use for search and sort
-    * allowed child Entities
-    * what kind of custom actions it supports
-    * ...
-* Properties are fully customizable
-    * label
-    * description
-    * data type
-    * multiplicity
-    * visibility in public search
-    * ...
-* In addition to stored properties, there are calculated properties to calculate/show Entity's (or related Entity's) properties
-* Property can store one or multiple values
-* Entities can be related with each other by system relations (child, seeder, leecher) or by custom ones
-* User authentication is delegated to Google, Facebook, Twitter, MS Live or other providers
-* Users have explicit rights (viewer, editor, owner) for every Entity - there are no roles
+## Key functions
+* Search for entities based on keywords, entity type and dataproperty. Possible to get all info about entity or only 'displayable'
+* View all information about entity, by giving entity identification number.
+* Add new entity by providing entity_definition_keyname or simply the type of new entity and optionally parent identification number.
+* Modify existing entity properties or add new ones: API creates new property if given property_id = None, otherwise changes existing.
+* User authentication is delegated to Facebook
 
 
 ## Screenshot
 
-![Screenshot](https://raw.github.com/argoroots/Entu/master/static/images/screenshot.png "Screenshot")
+![Screenshot](http://math.ut.ee/~juliet91/screenshot.png "Screenshot")
 
+### Dependencies:
 
-## Dependencies
+* [MySQL 3.23+](http://www.mysql.com/)
+* [Python 2.7x](http://www.python.org/)
+  * [Tornado](http://www.tornadoweb.org/)
+  * [python-mysqld](http://mysql-python.sourceforge.net/)
+  * [python-magic](https://github.com/ahupp/python-magic)
+  * [python-suds](https://fedorahosted.org/suds/)
+  * [python-markdown2](https://github.com/trentm/python-markdown2)
+  * [tornadomail](https://github.com/equeny/tornadomail)
+  * [xmltodict](https://github.com/martinblech/xmltodict)
+  * [Bautiful Soup](http://www.crummy.com/software/BeautifulSoup)
+  * [virtualenv](http://www.virtualenv.org/en/latest/)
+  * [Pip installs Python](http://www.pip-installer.org/en/latest/)
 
-* [MySQL](http://www.mysql.com/)
-* [Python](http://www.python.org/)
-    * [Tornado](http://www.tornadoweb.org)
-    * [python-mysqldb](http://mysql-python.sourceforge.net)
-    * [python-magic](https://github.com/ahupp/python-magic)
-    * [python-suds](https://fedorahosted.org/suds/)
-    * [python-markdown2](https://github.com/trentm/python-markdown2)
-    * [tornadomail](https://github.com/equeny/tornadomail)
-    * [xmltodict](https://github.com/martinblech/xmltodict)
-    * [Beautiful Soup](http://www.crummy.com/software/BeautifulSoup)
+**Additional Debian dependencies:**
+* libmysqlclient15-dev
+* python-dev
 
+***
 
-## Used libraries/add-ons
+### Recommended OS:
 
-* [Bootstrap](http://twitter.github.com/bootstrap/) + [Font Awesome](http://fortawesome.github.com/Font-Awesome/)
-* [jQuery](http://jquery.com/) + [jQuery UI](http://jqueryui.com/)
-* [Elastic](http://unwrongest.com/projects/elastic/)
-* [Datejs](http://www.datejs.com/)
+* Linux
+
+**Reason:** original Entu database is run on Linux. Also the guide is focused on installation procedure in Debian distribution.
+
+**Note 1:** Entu is unlikely to run on Windows since python-mysqld is made for POSIX system and is not promised to work by the mysqld author. Customization for Windows may exist.
+
+**Note 2:** Working on Mac is untested.
 
 
 ## ToDo
 
-* Calculation (formula) fields
-* Show Entity.displaycount
-* Show all entities in search (not first 303)
-* Replace [tornadomail](https://github.com/equeny/tornadomail) with better email library
-* Custom Entity actions
-* Favorite entities
-* Recently viewed/changed entities
-* Separate login page
-* Invite person to become user
-* Customizable table fields by user (visibility, sort)
-* Find duplicate Entities and propose merger
-* Option to ask permission (send message to owner) to Entity if access denied
-* Relation definition based Entity.displaytable
+* Add other authentication providers (Google, MS Live)
 * ...
