@@ -1,7 +1,12 @@
 from helper import *
 from db import Entity
 from tornado import web
+from tornado import auth
+from tornado import httpclient
 import json
+import urllib
+import urlparse
+
 
 class Search (myRequestHandler):
     """
@@ -130,20 +135,96 @@ class SaveProperty(myRequestHandler):
     def post(self):
       raise web.HTTPError(405, 'Currently using GET method.')
 
-class Auth (myRequestHandler):
+class Auth (myRequestHandler,auth.OAuth2Mixin):
     """
     API authentication function.
     """
-   
+    
+    @web.asynchronous
+    def get(self,provider):
+
+        provider = self.get_argument('provider', None)
+    
+        key = self.settings['facebook_api_key']
+        secret = self.settings['facebook_secret']
+        self_url = self.request.protocol + '://' + self.request.host + '/auth/' + provider
+        
+        # initial step to gain code
+        if not self.get_argument('code', None):
+            return self.redirect(
+                                 'https://www.facebook.com/dialog/oauth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s'
+                                 % {
+                'id':       key,
+                'redirect': self_url,
+                'scope':    email,
+            })
+        
+        # erroneous response from code gaining process
+        if self.get_argument('error',None):
+            raise web.HTTPError(401,'User declined authorization')
+        
+        # fetch access token using the gained code
+        httpclient.AsyncHTTPClient().fetch(
+            'https://graph.facebook.com/oauth/access_token',
+            method = 'POST',
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'},        
+            body = urllib.urlencode({
+                'client_id' : key,
+                'client_secret' : secret,
+                'redirect_uri' : self_url,
+                'code' : self.get_argument('code',None),
+                'grant_type' : 'authorization_code'
+            }),
+            callback = self._got_token,
+        )
+
+    @web.asynchronous
+    def _got_token(self,response):
+        access_token = urlparse.parse_qs(response.body)['acces_token']
+                
+        httpclient.AsyncHTTPClient().fetch(
+            'https://graph.facebook.com/me?access_token=%(token)s'
+                %  {'token': access_token },
+            callback = self._got_user
+        )
+        
+    @web.asynchronous
+    def _got_user(self,response):
+        user = json.loads(response.body)
+        LoginUser(self,{
+            'provider' : 'facebook',
+            'id' : user.setdefault('id'),
+            'email' : user.setdefault('email'),
+            'name' : user.setdefault('name'),
+            'picture' : 'http://graph.facebook.com/%s/picture?type=large' % user.setdefault('id', ''),
+        })
+        
+        
+def Login(handler, user):
+    """
+    Starts session. Creates new user.
+
+    """
+    session_key = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32)) + hashlib.md5(str(time.time())).hexdigest()
+    user_key = hashlib.md5(handler.request.remote_ip + handler.request.headers.get('User-Agent', None)).hexdigest()
+
+    db.User().create(
+        provider    = user['provider'],
+        id          = user['id'],
+        email       = user['email'],
+        name        = user['name'],
+        picture     = user['picture'],
+        language    = handler.settings['default_language'],
+        session     = session_key+user_key
+    )
+
+    handler.set_secure_cookie('session', str(session_key))
+    
+ 
+class Logout(myRequestHandler):
     def get(self):
-       print 'Auth get'
-       
-       provider = self.get_argument('provider', None)
-      
-
-    def post(self):
-       raise web.HTTPError(401, 'Unauthorized')
-
+        self.clear_cookie('session')
+    
 def datetime_to_ISO8601(entity_list):
     """
         Transforms each entity's ordinal field into string format specified by ISO 8601

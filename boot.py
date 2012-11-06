@@ -1847,7 +1847,7 @@ use entudb;
 source %s/sql/create_tables.sql;
 source %s/sql/setup.sql;
 insert into app_settings (keyname, value) values ('default_language','estonian');
-insert into app_settings (keyname, value) values ('facebook_key','244803165645840');
+insert into app_settings (keyname, value) values ('facebook_api_key','244803165645840');
 insert into app_settings (keyname, value) values ('facebook_secret','4d4f10f8881bd1a04f96e7c31af20afb');
 """
 
