@@ -1849,6 +1849,7 @@ source %s/sql/setup.sql;
 insert into app_settings (keyname, value) values ('default_language','estonian');
 insert into app_settings (keyname, value) values ('facebook_api_key','244803165645840');
 insert into app_settings (keyname, value) values ('facebook_secret','4d4f10f8881bd1a04f96e7c31af20afb');
+insert into app_settings (keyname, value) values ('cookie_secret','%s')
 """
 
 
@@ -1883,7 +1884,7 @@ def createStarter(env_address):
 def createSQL(host):
     path = os.path.dirname(os.path.realpath(__file__))
     output = open('sql/entu.sql','w')
-    output.write(SQL_SCRIPT%(host,path,path))
+    output.write(SQL_SCRIPT%(host,path,path,''.join(random.choice(string.ascii_letters + string.digits) for x in range(64))))
     output.close()
 
 def getDBconf():
