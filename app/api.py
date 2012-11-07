@@ -143,8 +143,6 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
     @web.asynchronous
     def get(self,provider):
 
-        provider = self.get_argument('provider', None)
-    
         key = self.settings['facebook_api_key']
         secret = self.settings['facebook_secret']
         self_url = self.request.protocol + '://' + self.request.host + '/auth/' + provider
