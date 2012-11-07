@@ -8,6 +8,8 @@ import urllib
 import urlparse
 import string
 import hashlib
+import random
+import time
 
 
 class Search (myRequestHandler):
@@ -156,7 +158,7 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
                                  % {
                 'id':       key,
                 'redirect': self_url,
-                'scope':    email,
+                'scope':    'email',
             })
         
         # erroneous response from code gaining process
@@ -173,14 +175,16 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
                 'client_secret' : secret,
                 'redirect_uri' : self_url,
                 'code' : self.get_argument('code',None),
-                'grant_type' : 'authorization_code'
             }),
             callback = self._got_token,
         )
 
     @web.asynchronous
     def _got_token(self,response):
-        access_token = urlparse.parse_qs(response.body)['acces_token']
+        if response.error:
+            self.finish()
+            
+        access_token = escape.parse_qs_bytes(escape.native_str(response.body))['access_token'][-1]
                 
         httpclient.AsyncHTTPClient().fetch(
             'https://graph.facebook.com/me?access_token=%(token)s'
@@ -191,7 +195,7 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
     @web.asynchronous
     def _got_user(self,response):
         user = json.loads(response.body)
-        LoginUser(self,{
+        Login(self,{
             'provider' : 'facebook',
             'id' : user.setdefault('id'),
             'email' : user.setdefault('email'),
@@ -242,5 +246,5 @@ handlers = [
     ('/view', View),
     ('/search', Search),
     ('/save_property', SaveProperty),
-    ('/auth', Auth),
+    ('/auth/(.*)', Auth),
 ]
