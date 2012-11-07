@@ -1823,7 +1823,7 @@ def create_bootstrap_script(extra_text, python_version=''):
 
 
 
-import subprocess,os
+import subprocess,os,random,string
 
 STARTER_FILE = """
 import sys, subprocess, os

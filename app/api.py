@@ -6,6 +6,8 @@ from tornado import httpclient
 import json
 import urllib
 import urlparse
+import string
+import hashlib
 
 
 class Search (myRequestHandler):
