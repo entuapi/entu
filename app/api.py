@@ -143,65 +143,108 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
     """
     API authentication function.
     """
-    
+     
     @web.asynchronous
     def get(self,provider):
-
-        key = self.settings['facebook_api_key']
-        secret = self.settings['facebook_secret']
-        self_url = self.request.protocol + '://' + self.request.host + '/auth/' + provider
+       key = None
+       if provider == 'facebook':
+           key = self.settings['facebook_api_key']
+           secret = self.settings['facebook_secret']
+           auth_url = 'https://www.facebook.com/dialog/oauth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s'
+           scope = 'email'
+           token_url = 'https://graph.facebook.com/oauth/access_token'
+           info_url = 'https://graph.facebook.com/me?access_token=%(token)s'
+            
+       if provider == 'google':
+           key = self.settings['google_client_key']
+           secret = self.settings['google_client_secret']
+           auth_url = 'https://accounts.google.com/o/oauth2/auth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s&response_type=code&approval_prompt=auto&access_type=online'
+           scope = 'https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email'
+           token_url = 'https://accounts.google.com/o/oauth2/token'
+           info_url = 'https://www.googleapis.com/oauth2/v2/userinfo?access_token=%(token)s'
         
-        # initial step to gain code
-        if not self.get_argument('code', None):
-            return self.redirect(
-                                 'https://www.facebook.com/dialog/oauth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s'
-                                 % {
-                'id':       key,
-                'redirect': self_url,
-                'scope':    'email',
-            })
+       if provider == 'live':
+           key = self.settings['live_client_key']
+           secret = self.settings['live_client_secret']
+           auth_url = 'https://oauth.live.com/authorize?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s&response_type=code'  
+           scope = 'wl.signin+wl.emails'
+           token_url = 'https://oauth.live.com/token'
+           info_url = 'https://apis.live.net/v5.0/me?access_token=%(token)s'
+            
+       if key == None:
+           raise web.HTTPError(404,'No such provider found')
+           return self.finish()
         
-        # erroneous response from code gaining process
-        if self.get_argument('error',None):
-            raise web.HTTPError(401,'User declined authorization')
+       self_url = self.request.protocol + '://' + self.request.host + '/auth/' + provider
         
-        # fetch access token using the gained code
-        httpclient.AsyncHTTPClient().fetch(
-            'https://graph.facebook.com/oauth/access_token',
-            method = 'POST',
-            headers = {'Content-Type': 'application/x-www-form-urlencoded'},        
-            body = urllib.urlencode({
-                'client_id' : key,
-                'client_secret' : secret,
-                'redirect_uri' : self_url,
-                'code' : self.get_argument('code',None),
-            }),
-            callback = self._got_token,
-        )
+       # initial step to gain code
+       if not self.get_argument('code', None):
+           return self.redirect(auth_url
+                                % {
+               'id':       key,
+               'redirect': self_url,
+               'scope':    scope,
+               'state':    ''.join(random.choice(string.ascii_letters + string.digits) for x in range(16)),
+           })
+        
+       # erroneous response from code gaining process
+       if self.get_argument('error',None):
+           raise web.HTTPError(401,'User declined authorization')
+        
+       # fetch access token using the gained code
+       httpclient.AsyncHTTPClient().fetch(
+           token_url,
+           method = 'POST',
+           headers = {'Content-Type': 'application/x-www-form-urlencoded'},         
+           body = urllib.urlencode({
+               'client_id' : key,
+               'client_secret' : secret,
+               'redirect_uri' : self_url,
+               'code' : self.get_argument('code',None),
+           }),
+           callback = self._got_token,
+       )
 
     @web.asynchronous
     def _got_token(self,response):
-        if response.error:
-            self.finish()
+       if response.error:
+           self.finish()
             
-        access_token = escape.parse_qs_bytes(escape.native_str(response.body))['access_token'][-1]
+       access_token = escape.parse_qs_bytes(escape.native_str(response.body))['access_token'][-1]
                 
-        httpclient.AsyncHTTPClient().fetch(
-            'https://graph.facebook.com/me?access_token=%(token)s'
-                %  {'token': access_token },
-            callback = self._got_user
-        )
+       httpclient.AsyncHTTPClient().fetch(
+               info_url
+               %  {'token': access_token },
+           callback = self._got_user
+       )
         
     @web.asynchronous
     def _got_user(self,response):
-        user = json.loads(response.body)
-        Login(self,{
-            'provider' : 'facebook',
-            'id' : user.setdefault('id'),
-            'email' : user.setdefault('email'),
-            'name' : user.setdefault('name'),
-            'picture' : 'http://graph.facebook.com/%s/picture?type=large' % user.setdefault('id', ''),
-        })
+       user = json.loads(response.body)
+       if provider == 'facebook':
+           Login(self,{
+               'provider' : provider,
+               'id' : user.setdefault('id'),
+               'email' : user.setdefault('email'),
+               'name' : user.setdefault('name'),
+               'picture' : 'http://graph.facebook.com/%s/picture?type=large' % user.setdefault('id', ''),
+           })   
+       if provider == 'google':
+           Login(self,{
+               'provider' : provider,
+               'id' : user.setdefault('id'),
+               'email' : user.setdefault('email'),
+               'name' : user.setdefault('name'),
+               'picture' : user.setdefault('picture', None),
+           })  
+       if provider == 'live':
+           Login(self,{
+               'provider' : provider,
+               'id' : user.setdefault('id'),
+               'email' : user.setdefault('email'),
+               'name' : user.setdefault('name'),
+               'picture' : 'https://apis.live.net/v5.0/%(id)s/picture',
+           })  
         
         
 def Login(handler, user):
