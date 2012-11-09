@@ -223,6 +223,7 @@ def Login(handler, user):
     )
 
     handler.set_secure_cookie('session', str(session_key))
+    handler.finish()
     
  
 class Logout(myRequestHandler):
