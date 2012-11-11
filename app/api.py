@@ -148,31 +148,42 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
     @web.asynchronous
     def get(self,provider):
        key = None
+       self.data = None
+       provider = provider.lower()
+       
        if provider == 'facebook':
-           key = self.settings['facebook_api_key']
-           secret = self.settings['facebook_secret']
-           auth_url = 'https://www.facebook.com/dialog/oauth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s'
-           scope = 'email'
-           token_url = 'https://graph.facebook.com/oauth/access_token'
-           info_url = 'https://graph.facebook.com/me?access_token=%(token)s'
-            
+           self.data = {
+               'provider' : 'facebook',
+               'key' : self.settings['facebook_api_key'],
+               'secret' : self.settings['facebook_secret'],
+               'auth_url' : 'https://www.facebook.com/dialog/oauth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s',
+               'scope' : 'email',
+               'token_url' : 'https://graph.facebook.com/oauth/access_token',
+               'info_url' : 'https://graph.facebook.com/me?access_token=%(token)s'
+           }
        if provider == 'google':
-           key = self.settings['google_client_key']
-           secret = self.settings['google_client_secret']
-           auth_url = 'https://accounts.google.com/o/oauth2/auth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s&response_type=code&approval_prompt=auto&access_type=online'
-           scope = 'https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email'
-           token_url = 'https://accounts.google.com/o/oauth2/token'
-           info_url = 'https://www.googleapis.com/oauth2/v2/userinfo?access_token=%(token)s'
-        
+            self.data = {
+               'provider' : 'google',
+               'key' : self.settings['google_client_key'],
+               'secret' : self.settings['google_client_secret'],
+               'auth_url' : 'https://accounts.google.com/o/oauth2/auth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s&response_type=code&approval_prompt=auto&access_type=online',
+               'scope' : 'https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email',
+               'token_url' : 'https://accounts.google.com/o/oauth2/token',
+               'info_url' : 'https://www.googleapis.com/oauth2/v2/userinfo?access_token=%(token)s'
+           }
+
        if provider == 'live':
-           key = self.settings['live_client_key']
-           secret = self.settings['live_client_secret']
-           auth_url = 'https://oauth.live.com/authorize?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s&response_type=code'  
-           scope = 'wl.signin+wl.emails'
-           token_url = 'https://oauth.live.com/token'
-           info_url = 'https://apis.live.net/v5.0/me?access_token=%(token)s'
+            self.data = {
+               'provider' : 'live',
+               'key' : self.settings['live_client_key'],
+               'secret' : self.settings['live_client_secret'],
+               'auth_url' : 'https://oauth.live.com/authorize?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s&response_type=code'  ,
+               'scope' : 'wl.signin+wl.emails',
+               'token_url' : 'https://oauth.live.com/token',
+               'info_url' : 'https://apis.live.net/v5.0/me?access_token=%(token)s'
+           }
             
-       if key == None:
+       if not self.data:
            raise web.HTTPError(404,'No such provider found')
            return self.finish()
         
@@ -180,11 +191,11 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
         
        # initial step to gain code
        if not self.get_argument('code', None):
-           return self.redirect(auth_url
+           return self.redirect(self.data['auth_url']
                                 % {
-               'id':       key,
+               'id':       self.data['key'],
                'redirect': self_url,
-               'scope':    scope,
+               'scope':    self.data['scope'],
                'state':    ''.join(random.choice(string.ascii_letters + string.digits) for x in range(16)),
            })
         
@@ -194,12 +205,12 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
         
        # fetch access token using the gained code
        httpclient.AsyncHTTPClient().fetch(
-           token_url,
+           self.data['token_url'],
            method = 'POST',
            headers = {'Content-Type': 'application/x-www-form-urlencoded'},         
            body = urllib.urlencode({
-               'client_id' : key,
-               'client_secret' : secret,
+               'client_id' : self.data['key'],
+               'client_secret' : self.data['secret'],
                'redirect_uri' : self_url,
                'code' : self.get_argument('code',None),
            }),
@@ -214,7 +225,7 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
        access_token = escape.parse_qs_bytes(escape.native_str(response.body))['access_token'][-1]
                 
        httpclient.AsyncHTTPClient().fetch(
-               info_url
+               self.data['info_url']
                %  {'token': access_token },
            callback = self._got_user
        )
@@ -222,25 +233,25 @@ class Auth (myRequestHandler,auth.OAuth2Mixin):
     @web.asynchronous
     def _got_user(self,response):
        user = json.loads(response.body)
-       if provider == 'facebook':
+       if self.data['provider'] == 'facebook':
            Login(self,{
-               'provider' : provider,
+               'provider' : self.data['provider'],
                'id' : user.setdefault('id'),
                'email' : user.setdefault('email'),
                'name' : user.setdefault('name'),
                'picture' : 'http://graph.facebook.com/%s/picture?type=large' % user.setdefault('id', ''),
            })   
-       if provider == 'google':
+       if self.data['provider'] == 'google':
            Login(self,{
-               'provider' : provider,
+               'provider' : self.data['provider'],
                'id' : user.setdefault('id'),
                'email' : user.setdefault('email'),
                'name' : user.setdefault('name'),
                'picture' : user.setdefault('picture', None),
            })  
-       if provider == 'live':
+       if self.data['provider'] == 'live':
            Login(self,{
-               'provider' : provider,
+               'provider' : self.data['provider'],
                'id' : user.setdefault('id'),
                'email' : user.setdefault('email'),
                'name' : user.setdefault('name'),
