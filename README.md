@@ -49,5 +49,5 @@ _API for Entu (Entu is futuristic object database framework) which lets you sear
 
 ## ToDo
 
-* Add other authentication providers (Google, MS Live)
+* Improve code
 * ...
