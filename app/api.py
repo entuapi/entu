@@ -3,6 +3,7 @@ from db import Entity
 from tornado import web
 from tornado import auth
 from tornado import httpclient
+from tornado import escape
 import json
 import urllib
 import urlparse
