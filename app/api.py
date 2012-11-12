@@ -93,7 +93,7 @@ class View (myRequestHandler):
 class SaveEntity(myRequestHandler):
     """
     API save entity function.
-    Needs entity ID and optionally parent ID.
+    Needs entity definition keyname and optionally parent ID.
     Return Entity ID.
     """
     def get(self):
