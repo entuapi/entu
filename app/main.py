@@ -23,6 +23,7 @@ define('mysql_password', help = 'mysql database password',  type = str)
 # List of controllers to load.
 controllers = [
     'api',
+    'auth',
 ]
 
 

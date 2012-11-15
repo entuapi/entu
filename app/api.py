@@ -24,12 +24,12 @@ class Search (myRequestHandler):
         ids_only = False
         full_info = self.get_argument('full_info',None)
         entity_id = None
-        keywords = self.get_argument('keywords', None)
-        entity_definition = self.get_argument('entity_type', None)
+        keywords = self.get_argument('search', None)
+        entity_definition = self.get_argument('entity_definition_keyname', None)
         dataproperty = self.get_argument('dataproperty', None)
         limit = self.get_argument('limit', None)
-        full_definition = False
-        public = True if self.get_argument('public', '0') == '1' else False
+        full_definition = True if self.get_argument('full_definition','false') == 'true' else False
+        public = True if self.get_argument('public', 'false') == 'true' else False
               
         entity = db.Entity(user_locale=self.get_user_locale())
         
@@ -57,11 +57,6 @@ class Search (myRequestHandler):
         else:
             self.write(json.dumps(result))
 
-
-    def post(self):
-        raise web.HTTPError(405, 'POST method not supported.')
-
-       
        
 class View (myRequestHandler):
     """
@@ -70,14 +65,15 @@ class View (myRequestHandler):
     def get(self):
         entity = db.Entity(user_locale=self.get_user_locale())
         
-        entity_id = self.get_argument('id',None)
+        entity_id = self.get_argument('entity_id',None)
        
         if not entity_id:
             raise web.HTTPError(400,'Entity ID required.')
        
         only_public = True if self.get_argument('public', '0') == '1' else False
+        full_definition = True if self.get_argument('full_definition','false') == 'true' else False
        
-        result = entity.get(entity_id=self.get_argument('id'), limit=1, full_definition=True, only_public=False)
+        result = entity.get(entity_id=self.get_argument('id'), limit=1, full_definition=full_definition, only_public=only_public)
        
         if not result:
             return self.missing()
@@ -85,9 +81,18 @@ class View (myRequestHandler):
         datetime_to_ISO8601(result)
        
         self.write(json.dumps(result))
-       
-    def post(self):
-        raise web.HTTPError(405, 'POST method not supported.')
+        
+class GetEntityProperties(myRequestHandler):
+    
+    def get(self):
+        entity = db.Entity(user_locale=self.get_user_locale())
+        
+        entity_definition_keyname = self.get_argument('entity_definition_keyname',None)
+        
+        if not entity_definition_keyname:
+            raise web.HTTPError(400,'Entity ID required.')
+        
+        self.write(json.dumps(entity.get_definition(entity_definition_keyname)))
      
      
 class SaveEntity(myRequestHandler):
@@ -108,9 +113,6 @@ class SaveEntity(myRequestHandler):
            })
        else:
            raise web.HTTPError(400, 'To create new Entity entity_definition_keyname is required.')
-      
-    def post(self):
-      raise web.HTTPError(405, 'Currently using GET method.')
 
 class SaveProperty(myRequestHandler):  
     """
@@ -123,8 +125,7 @@ class SaveProperty(myRequestHandler):
       property_definition_keyname = self.get_argument('property_definition_keyname', default=None, strip=True)
       property_id = self.get_argument('value_id', default=None, strip=True)
       value = self.get_argument('value', default=None, strip=True)
-      is_counter = self.get_argument('counter', default='false', strip=True)
-      is_public = self.get_argument('is_public', default='false', strip=True)
+      public = True if self.get_argument('public', default='false', strip=True) == 'true' else False
       uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
       
       entity = db.Entity(user_locale=self.get_user_locale())
@@ -135,145 +136,7 @@ class SaveProperty(myRequestHandler):
           })
       else:
           raise web.HTTPError(400, 'Entity ID required')
-      
-          
-    def post(self):
-      raise web.HTTPError(405, 'Currently using GET method.')
-
-class Auth (myRequestHandler,auth.OAuth2Mixin):
-    """
-    API authentication function.
-    """
-     
-    @web.asynchronous
-    def get(self,provider):
-       key = None
-       if provider == 'facebook':
-           key = self.settings['facebook_api_key']
-           secret = self.settings['facebook_secret']
-           auth_url = 'https://www.facebook.com/dialog/oauth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s'
-           scope = 'email'
-           token_url = 'https://graph.facebook.com/oauth/access_token'
-           info_url = 'https://graph.facebook.com/me?access_token=%(token)s'
-            
-       if provider == 'google':
-           key = self.settings['google_client_key']
-           secret = self.settings['google_client_secret']
-           auth_url = 'https://accounts.google.com/o/oauth2/auth?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s&response_type=code&approval_prompt=auto&access_type=online'
-           scope = 'https://www.googleapis.com/auth/userinfo.profile+https://www.googleapis.com/auth/userinfo.email'
-           token_url = 'https://accounts.google.com/o/oauth2/token'
-           info_url = 'https://www.googleapis.com/oauth2/v2/userinfo?access_token=%(token)s'
-        
-       if provider == 'live':
-           key = self.settings['live_client_key']
-           secret = self.settings['live_client_secret']
-           auth_url = 'https://oauth.live.com/authorize?client_id=%(id)s&redirect_uri=%(redirect)s&scope=%(scope)s&state=%(state)s&response_type=code'  
-           scope = 'wl.signin+wl.emails'
-           token_url = 'https://oauth.live.com/token'
-           info_url = 'https://apis.live.net/v5.0/me?access_token=%(token)s'
-            
-       if key == None:
-           raise web.HTTPError(404,'No such provider found')
-           return self.finish()
-        
-       self_url = self.request.protocol + '://' + self.request.host + '/auth/' + provider
-        
-       # initial step to gain code
-       if not self.get_argument('code', None):
-           return self.redirect(auth_url
-                                % {
-               'id':       key,
-               'redirect': self_url,
-               'scope':    scope,
-               'state':    ''.join(random.choice(string.ascii_letters + string.digits) for x in range(16)),
-           })
-        
-       # erroneous response from code gaining process
-       if self.get_argument('error',None):
-           raise web.HTTPError(401,'User declined authorization')
-        
-       # fetch access token using the gained code
-       httpclient.AsyncHTTPClient().fetch(
-           token_url,
-           method = 'POST',
-           headers = {'Content-Type': 'application/x-www-form-urlencoded'},         
-           body = urllib.urlencode({
-               'client_id' : key,
-               'client_secret' : secret,
-               'redirect_uri' : self_url,
-               'code' : self.get_argument('code',None),
-           }),
-           callback = self._got_token,
-       )
-
-    @web.asynchronous
-    def _got_token(self,response):
-       if response.error:
-           self.finish()
-            
-       access_token = escape.parse_qs_bytes(escape.native_str(response.body))['access_token'][-1]
-                
-       httpclient.AsyncHTTPClient().fetch(
-               info_url
-               %  {'token': access_token },
-           callback = self._got_user
-       )
-        
-    @web.asynchronous
-    def _got_user(self,response):
-       user = json.loads(response.body)
-       if provider == 'facebook':
-           Login(self,{
-               'provider' : provider,
-               'id' : user.setdefault('id'),
-               'email' : user.setdefault('email'),
-               'name' : user.setdefault('name'),
-               'picture' : 'http://graph.facebook.com/%s/picture?type=large' % user.setdefault('id', ''),
-           })   
-       if provider == 'google':
-           Login(self,{
-               'provider' : provider,
-               'id' : user.setdefault('id'),
-               'email' : user.setdefault('email'),
-               'name' : user.setdefault('name'),
-               'picture' : user.setdefault('picture', None),
-           })  
-       if provider == 'live':
-           Login(self,{
-               'provider' : provider,
-               'id' : user.setdefault('id'),
-               'email' : user.setdefault('email'),
-               'name' : user.setdefault('name'),
-               'picture' : 'https://apis.live.net/v5.0/%(id)s/picture',
-           })  
-        
-        
-def Login(handler, user):
-    """
-    Starts session. Creates new user.
-
-    """
-    session_key = ''.join(random.choice(string.ascii_letters + string.digits) for x in range(32)) + hashlib.md5(str(time.time())).hexdigest()
-    user_key = hashlib.md5(handler.request.remote_ip + handler.request.headers.get('User-Agent', None)).hexdigest()
-
-    db.User().create(
-        provider    = user['provider'],
-        id          = user['id'],
-        email       = user['email'],
-        name        = user['name'],
-        picture     = user['picture'],
-        language    = handler.settings['default_language'],
-        session     = session_key+user_key
-    )
-
-    handler.set_secure_cookie('session', str(session_key))
-    handler.finish()
-    
- 
-class Logout(myRequestHandler):
-    def get(self):
-        self.clear_cookie('session')
-    
+  
 def datetime_to_ISO8601(entity_list):
     """
         Transforms each entity's ordinal field into string format specified by ISO 8601
@@ -291,5 +154,5 @@ handlers = [
     ('/view', View),
     ('/search', Search),
     ('/save_property', SaveProperty),
-    ('/auth/(.*)', Auth),
+    ('/get_entity_properties', GetEntityProperties),
 ]
