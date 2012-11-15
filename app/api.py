@@ -142,8 +142,7 @@ def datetime_to_ISO8601(entity_list):
         Transforms each entity's ordinal field into string format specified by ISO 8601
     """
     if type(entity_list) is not list:
-        entity_list = [entity_list]
-        
+        entity_list = [entity_list]        
     for entity in entity_list:
            datetime_obj = entity['ordinal']
            entity['ordinal'] = "%d%d%dT%d%d%d"%(datetime_obj.year,datetime_obj.month,datetime_obj.day,
