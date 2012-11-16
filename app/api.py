@@ -121,21 +121,55 @@ class SaveProperty(myRequestHandler):
     Returns property ID.
     """
     def get(self):
-      entity_id = self.get_argument('entity_id', default=None, strip=True)
-      property_definition_keyname = self.get_argument('property_definition_keyname', default=None, strip=True)
-      property_id = self.get_argument('value_id', default=None, strip=True)
-      value = self.get_argument('value', default=None, strip=True)
-      public = True if self.get_argument('public', default='false', strip=True) == 'true' else False
-      uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
+        entity_id = self.get_argument('entity_id', default=None, strip=True)
+        property_definition_keyname = self.get_argument('property_definition_keyname', default=None, strip=True)
       
-      entity = db.Entity(user_locale=self.get_user_locale())
-      if entity_id:
-          property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)    
-          self.write({
-                      'property_id':property_id
-          })
-      else:
-          raise web.HTTPError(400, 'Entity ID required')
+        # if data is passed as json
+        if not entity_id and not property_definition_keyname:
+            properties = self.get_argument('properties', None)
+            if not properties:
+                raise web.HTTPError(400, 'Invalid data passed')
+            
+            properties = json.loads(properties)
+            
+            if not isinstance(properties,list):
+                properties = [properties]
+            
+            entity = db.Entity(user_local=self.get_user_locale())
+            property_id_list = []
+              
+            for property in properties:
+                entity_id = properties.setdefault('entity_id',None)
+                property_definition_keyname = properties.setdefault('property_definition_keyname',None)
+                property_id = properties.setdefault('property_id',None)
+                value = properties.setdefault('value',None)
+                public = properties.setdefault('public','false')
+                public = True if public != 'false' else False
+                uploaded_file_name = properties.setdefault('file',None)
+                uploaded_file = self.request.files.get(uploaded_file_name,None) if uploaded_file_name != None else None
+                
+                if entity_id and property_definition_keyname:
+                    property_id_list.append(entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file))
+                else:
+                    raise web.HTTPError(400, 'entity_id and property_definition_keyname required')
+            
+            self.write(json.dumps(property_id_list))
+            self.finish()
+            
+      
+        property_id = self.get_argument('property_id', default=None, strip=True)
+        value = self.get_argument('value', default=None, strip=True)
+        public = True if self.get_argument('public', default='false', strip=True) == 'true' else False
+        uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
+      
+        entity = db.Entity(user_locale=self.get_user_locale())
+        if entity_id:
+            property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)    
+            self.write({
+                        'property_id':property_id
+            })
+        else:
+            raise web.HTTPError(400, 'Entity ID required')
   
 def datetime_to_ISO8601(entity_list):
     """
