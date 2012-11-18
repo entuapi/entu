@@ -18,11 +18,90 @@ class Search (myRequestHandler):
     API search for entities based on keywords,entity type and
     dataproperty.
     
+    
+    search?[full_info=$full_info][&search=$search][&entity_definition_keyname=$entity_definition_keyname]
+    
+    [&dataproperty=$dataproperty][&limit=$limit][&full_definition=$full_definition][&public=$public]
+    
+    
+    $full_info = [(true)|(false)]
+    $search = (string)
+    $entity_definition_keyname = (string)
+    $dataproperty = (string)
+    $limit = (int)
+    $full_definition = [(true)|(false)]
+    $public = [(true)|(false)]
+    
+    Parameters:
+    
+        full_info - if 'true', returns all available visible data regarding the queried entities,
+                    otherwise ('false') returns minimalistic descriptive data:
+                        * entity_id
+                        * displayname
+                        * displayinfo
+                        * displaypicture
+                        * displaytable
+           
+                   DEFAULT = false
+                    
+                        
+        search  -   filters returned entities by returning only those entities which property has 
+                    one of the 'search' phrases as 'value_string' attribute
+                    
+                    e.g. ?search=name%20title%20author%20creator
+               
+                    
+        entity_definition_keyname - returns entities which are of specified type
+        
+                    e.g. ?entity_definition_keyname=book
+                    
+        
+        dataproperty - 
+        
+        
+        limit - maximum number of entities returned
+        
+                    e.g. ?limit=5
+                    
+                    DEFAULT = unlimited
+                    
+                    
+        full_definition - if 'true', returns empty fields, otherwise 'false'
+        
+                    e.g. ?full_definition=true
+                    
+                    DEFAULT = false
+                    
+            
+        public - if 'true', returns only public entities with public properties
+        
+                    e.g. ?public=true
+    
+                    DEFAULT = false
+    
+    
+    Returns:
+    
+        No results:
+        
+            HTTP status code 404
+            
+        full_info = true:
+        
+            [{'id':val1,'displayname':val2,'displayinfo':val3,'displaypicture':val4,'displaytable':val5},
+             ...,
+            {'id':valx,'displayname':valy,'displayinfo':valz,'displaypicture':valv,'displaytable':valw}]
+            
+        otherwise:
+        
+            [{all visible entity1 info},...,{all visible entityN info}]
+            
+            
     """
     def get(self):
        
         ids_only = False
-        full_info = self.get_argument('full_info',None)
+        full_info = True if self.get_argument('full_info','false') == 'true' else False
         entity_id = None
         keywords = self.get_argument('search', None)
         entity_definition = self.get_argument('entity_definition_keyname', None)
@@ -43,7 +122,7 @@ class Search (myRequestHandler):
         datetime_to_ISO8601(result)
               
         if not full_info:
-            entity_ids = []
+            entities = []
             for entity in result:
                 entity_obj = {}
                 entity_obj['id'] = entity['id']
@@ -51,8 +130,8 @@ class Search (myRequestHandler):
                 entity_obj['displayinfo'] = entity['displayinfo']
                 entity_obj['displaypicture'] = entity['displaypicture']
                 entity_obj['displaytable'] = entity['displaytable']
-                entity_ids.append(entity_obj)
-            self.write(json.dumps(entity_ids))
+                entities.append(entity_obj)
+            self.write(json.dumps(entities))
 
         else:
             self.write(json.dumps(result))
@@ -61,6 +140,25 @@ class Search (myRequestHandler):
 class View (myRequestHandler):
     """
     Returns entity by entity_id.
+    
+    view?entity_id=$entity_id[&public=$public][&full_definition=$full_definition]
+    
+    $entity_id = (int)
+    $public = [(true)|(false)]
+    $full_definition = [(true)|(false)]
+    
+    Parameters:
+    
+        entity_id (REQUIRED) - ID of the entity which information is being queried
+        
+        public - if 'true', searches among entities which are public and have public property
+        
+                DEFAULT = false
+        
+        full_definition - if 'true', includes properties that have empty values
+        
+                DEFAULT = false
+    
     """    
     def get(self):
         entity = db.Entity(user_locale=self.get_user_locale())
