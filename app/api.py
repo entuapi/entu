@@ -94,7 +94,7 @@ class Search (myRequestHandler):
             
         otherwise:
         
-            [{all visible entity1 info},...,{all visible entityN info}]
+            [{visible_entity1_fields},...,{visible_entityN_fields}]
             
             
     """
@@ -149,7 +149,7 @@ class View (myRequestHandler):
     
     Parameters:
     
-        entity_id (REQUIRED) - ID of the entity which information is being queried
+        entity_id (REQUIRED) - ID of the queried entity
         
         public - if 'true', searches among entities which are public and have public property
         
@@ -182,13 +182,39 @@ class View (myRequestHandler):
         
 class GetEntityProperties(myRequestHandler):
     
+    """    
+    Returns all the properties as templates that an entity with a specified definition_keyname can possess.
+    
+    get_entity_properties?entity_definition_keyname=$entity_definition_keyname
+    
+    $entity_definition_keyname = (string)
+    
+    Parameters:
+    
+        entity_definition_keyname (REQUIRED) - entity type under scrutiny
+        
+        e.g. ?entity_definition_keyname=library
+        
+        
+    Returns:
+    
+        entity_definition_keyname missing:
+        
+            HTTP status 400
+            
+        otherwise:
+        
+            [{property1_fields},...,{propertyN_fields}]
+    
+    """
+    
     def get(self):
         entity = db.Entity(user_locale=self.get_user_locale())
         
         entity_definition_keyname = self.get_argument('entity_definition_keyname',None)
         
         if not entity_definition_keyname:
-            raise web.HTTPError(400,'Entity ID required.')
+            raise web.HTTPError(400,'entity_definition_keyname required.')
         
         self.write(json.dumps(entity.get_definition(entity_definition_keyname)))
      
@@ -198,6 +224,34 @@ class SaveEntity(myRequestHandler):
     API save entity function.
     Needs entity ID and optionally parent ID.
     Return Entity ID.
+    
+    save_entity?entity_definition_keyname=$entity_definition_keyname[&parent_entity_id=$parent_entity_id]
+    
+    $entity_definition_keyname = (string)
+    $parent_entity_id = (int)
+    
+    Parameters:
+    
+        entity_definition_keyname (REQUIRED) - type of the created entity
+        
+                e.g. ?entity_definition_keyname=book
+                
+                
+        parent_entity_id - propagates rights from the parent and sets a parent-child relationship
+        
+                e.g. ?parent_entity_definition=514
+                
+                
+    Returns:
+    
+        entity_definition_keyname missing:
+        
+            HTTP status 400
+            
+        otherwise:
+        
+            {'entity_id':ID}
+    
     """
     def get(self):
        entity = db.Entity(user_locale=self.get_user_locale())
@@ -210,13 +264,86 @@ class SaveEntity(myRequestHandler):
                'entity_id':entity_id
            })
        else:
-           raise web.HTTPError(400, 'To create new Entity entity_definition_keyname is required.')
+           raise web.HTTPError(400, 'To create a new Entity entity_definition_keyname is required.')
 
 class SaveProperty(myRequestHandler):  
     """
     Add or edit property value.
     Creates new one if property_id = None, otherwise changes existing.
     Returns property ID.
+    
+    #1  save_property?entity_id=$entity_id&property_definition_keyname=$property_Definition_keyname
+    
+        [&property_id=$property_id][&value=$value][&public=$public]
+    
+          
+    #2 save_property?properties=$properties
+    
+        $properties = [
+                        {
+                          'entity_id':$entity_id#1,
+                          'property_definition_keyname':$property_definition_keyname#1
+                          [,'property_id':$property_id#1]
+                          [,'value':$value#1]
+                          [,'public':$public#1]
+                          [,'file':$file#1]
+                        }
+                        ,...,
+                        {
+                          'entity_id':$entity_id#N,
+                          'property_definition_keyname':$property_definition_keyname#N
+                          [,'property_id':$property_id#N]
+                          [,'value':$value#N]
+                          [,'public':$public#N]
+                          [,'file':$file#N]
+                        }
+                      ]
+    
+    $entity_id = (int)
+    $property_definition_keyname = (string)
+    $property_id = (int)
+    $value = *
+    $public = [(true)|(false)]
+    $file = (string)
+    
+    Parameters:
+    
+        entity_id (REQUIRED) - ID of the entity that the given property belongs to
+        
+        
+        property_definition_keyname (REQUIRED) - type of property
+    
+            e.g. ?property_definition_keyname=textbook-picture
+            
+            
+        property_id - ID of an existing property to be changed
+        
+        
+        value - value for the given property
+        
+        
+        public - ?
+        
+        
+        file (ONLY IN JSON) - name of the uploaded file
+        
+        
+    Uploading file:
+    
+        In order to upload file, property_definition_keyname must map to property_definition which datatype is 'file'.
+        
+        Also, if non-json format is used (aka not using 'properties' parameter), file should be uploaded under 'file' name.
+        If json format is used, each property's 'file' field must map to uploaded file's name.
+        
+        Uploaded file's name can be set, using, for example, simple html form:
+        
+            <form action="http://address.to.entu.api/save_property" method="post" enctype="multipart/form-data">
+                <label for="file">Filename:</label>
+                <input type="file" name="UPLOADED_FILE_NAME" id="file" />
+                <br />
+                <input type="submit" name="submit" value="Submit" />
+            </form>
+        
     """
     def get(self):
         entity_id = self.get_argument('entity_id', default=None, strip=True)
