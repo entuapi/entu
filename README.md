@@ -8,7 +8,7 @@ _API for Entu (Entu is futuristic object database framework) which lets you sear
 * View all information about entity, by giving entity identification number.
 * Add new entity by providing entity_definition_keyname or simply the type of new entity and optionally parent identification number.
 * Modify existing entity properties or add new ones: API creates new property if given property_id = None, otherwise changes existing.
-* User authentication is delegated to Facebook
+* Auhtenticate user or application
 
 
 ## Screenshot
