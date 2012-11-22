@@ -410,17 +410,17 @@ class SaveProperty(myRequestHandler):
             if not isinstance(properties,list):
                 properties = [properties]
             
-            entity = db.Entity(user_local=self.get_user_locale())
+            entity = db.Entity(user_locale=self.get_user_locale())
             property_id_list = []
               
             for property in properties:
-                entity_id = properties.setdefault('entity_id',None)
-                property_definition_keyname = properties.setdefault('property_definition_keyname',None)
-                property_id = properties.setdefault('property_id',None)
-                value = properties.setdefault('value',None)
-                public = properties.setdefault('public','false')
+                entity_id = property.setdefault('entity_id',None)
+                property_definition_keyname = property.setdefault('property_definition_keyname',None)
+                property_id = property.setdefault('property_id',None)
+                value = property.setdefault('value',None)
+                public = property.setdefault('public','false')
                 public = True if public != 'false' else False
-                uploaded_file_name = properties.setdefault('file',None)
+                uploaded_file_name = property.setdefault('file',None)
                 uploaded_file = self.request.files.get(uploaded_file_name,None) if uploaded_file_name != None else None
                 
                 if entity_id and property_definition_keyname:
@@ -431,20 +431,20 @@ class SaveProperty(myRequestHandler):
             self.write(json.dumps(property_id_list))
             self.finish()
             
-      
-        property_id = self.get_argument('property_id', default=None, strip=True)
-        value = self.get_argument('value', default=None, strip=True)
-        public = True if self.get_argument('public', default='false', strip=True) == 'true' else False
-        uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
-      
-        entity = db.Entity(user_locale=self.get_user_locale())
-        if entity_id:
-            property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)    
-            self.write({
-                        'property_id':property_id
-            })
-        else:
-            raise web.HTTPError(400, 'Entity ID required')
+        else:      
+            property_id = self.get_argument('property_id', default=None, strip=True)
+            value = self.get_argument('value', default=None, strip=True)
+            public = True if self.get_argument('public', default='false', strip=True) == 'true' else False
+            uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
+          
+            entity = db.Entity(user_locale=self.get_user_locale())
+            if entity_id:
+                property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)    
+                self.write({
+                            'property_id':property_id
+                })
+            else:
+                raise web.HTTPError(400, 'Entity ID required')
   
 def datetime_to_ISO8601(entity_list):
     """
