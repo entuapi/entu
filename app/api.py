@@ -217,7 +217,57 @@ class GetEntityProperties(myRequestHandler):
             raise web.HTTPError(400,'entity_definition_keyname required.')
         
         self.write(json.dumps(entity.get_definition(entity_definition_keyname)))
-     
+
+
+class GetAllowedChilds(myRequestHandler):
+    """
+    Returns allowed child-entity definitions, when entity_id is provided
+    
+    get_allowed_childs?entity_id=$entity_id
+    
+    $entity_id = (int)
+    
+    Parameters:
+    
+        entity_id (REQUIRED) - entity type
+        
+        e.g. ?entity_id=35
+        
+    Returns:
+    
+        [{"keyname":$keyname,"label":$label,"label_plural":$label_plural,"description":$description,"menugroup":$menugroup},...]
+        
+        $keyname = (string)
+        
+            entity_definition_keyname that can be used to create a new entity
+            
+        $label = (string)
+        
+            title for displaying
+            
+        $label_plural = (string)
+    
+            title in plural for displaying
+            
+        $description = (string)
+        
+            optional description of the entity type
+            
+        $menugroup = (string)
+        
+            suggests a name for the menu title
+    
+    """    
+    def get(self):
+        entity = entity = db.Entity(user_locale=self.get_user_locale())
+        
+        entity_id = self.get_argument('entity_id', None)
+        
+        if not entity_id:
+            raise web.HTTPError(400,'entity_id required')
+        
+        self.write(json.dumps(entity.get_allowed_childs(entity_id)))
+        
      
 class SaveEntity(myRequestHandler):
     """
@@ -413,4 +463,5 @@ handlers = [
     ('/search', Search),
     ('/save_property', SaveProperty),
     ('/get_entity_properties', GetEntityProperties),
+    ('/get_allowed_childs',GetAllowedEntities),
 ]
