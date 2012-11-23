@@ -2,6 +2,14 @@ import unittest
 import urllib
 from sqlalchemy import *
 
+"""
+Test for controlling validity of entity saving.
+How to use:
+python save_entity_test.py ['entity_definition_keyname'] ['parent_id']
+
+! Where ['entity_definition_keyname'] is mandatory and ['parent_id'] is optional
+"""
+
 def getLastId():
         db = create_engine('mysql://root:1234@localhost/entudb', echo=False)
         metadata = MetaData(db)
@@ -14,9 +22,16 @@ def getLastId():
         return max(ids)
     
 def getArgs():
-    query_args = {}
-    query_args['entity_definition_keyname'] = 'book'
-    return query_args
+        query_args = {}
+        query_args['entity_definition_keyname'] = getValue(1)
+        query_args['parent_id'] = getValue(2)
+        return query_args
+
+def getValue(argIndex):
+        if argIndex < len(sys.argv):
+                return sys.argv(argIndex)
+        else:
+                return None
         
 class TestSaveEntity(unittest.TestCase):
     def setUp(self):
