@@ -7,7 +7,7 @@ from sqlalchemy import *
 Test for controlling validity of property creating.
 
 How to use:
-python save_and_change_property_test.py ['entity_id'] ['property_definition_keyname'] ['value']
+python save_property_test.py ['entity_id'] ['property_definition_keyname'] ['value']
 
 ! Where
 ['entity_id'] and ['property_definition_keyname'] are mandatory
