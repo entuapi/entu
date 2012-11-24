@@ -8,7 +8,7 @@ Test for controlling validity of property changing.
 NB! BE SURE YOU GIVE ID OF PROPERTY YOU WANT TO CHANGE!
 
 How to use:
-python save_and_change_property_test.py ['entity_id'] ['property_id'] ['property_definition_keyname'] ['value']
+python change_property_test.py ['entity_id'] ['property_id'] ['property_definition_keyname'] ['value']
 
 ! Where
 ['entity_id'], ['property_id'] and ['property_definition_keyname'] are mandatory
