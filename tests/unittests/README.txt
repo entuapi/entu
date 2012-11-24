@@ -5,8 +5,8 @@ and MySQL database (where user:root, password:1234, host:localhost, port:default
 
 HOW TO RUN (more information in according test file)
 python save_entity_test.py ['entity_definition_keyname'] ['parent_id']
-python save_and_change_property_test.py ['entity_id'] ['property_definition_keyname'] ['value']
-python save_and_change_property_test.py ['entity_id'] ['property_id'] ['property_definition_keyname'] ['value']
+python save_property_test.py ['entity_id'] ['property_definition_keyname'] ['value']
+python change_property_test.py ['entity_id'] ['property_id'] ['property_definition_keyname'] ['value']
 
 OUTPUT
 Returns OK if test was successful, otherwise ERROR message
