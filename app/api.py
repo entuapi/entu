@@ -99,13 +99,13 @@ class Search (myRequestHandler):
             
     """
     def get(self):
-        full_info = True if self.get_argument('full_info','false') == 'true' else False
-        keywords = self.get_argument('search', None)
-        entity_definition = self.get_argument('entity_definition_keyname', None)
-        dataproperty = self.get_argument('dataproperty', None)
-        limit = self.get_argument('limit', None)
-        full_definition = True if self.get_argument('full_definition','false') == 'true' else False
-        public = True if self.get_argument('public', 'false') == 'true' else False
+        full_info = True if self.get_argument('full_info',default=None,strip=True) == 'true' else False
+        keywords = self.get_argument('search',default=None,strip=True)
+        entity_definition = self.get_argument('entity_definition_keyname',default=None,strip=True)
+        dataproperty = self.get_argument('dataproperty',default=None,strip=True)
+        limit = self.get_argument('limit',default=None,strip=True)
+        full_definition = True if self.get_argument('full_definition',default=None,strip=True) == 'true' else False
+        public = True if self.get_argument('public',default=None,strip=True) == 'true' else False
               
         entity = db.Entity(user_locale=self.get_user_locale())
         
@@ -158,13 +158,13 @@ class View (myRequestHandler):
     
     """    
     def get(self):        
-        entity_id = self.get_argument('entity_id',None)
+        entity_id = self.get_argument('entity_id',default=None,strip=True)
        
         if not entity_id:
             raise web.HTTPError(400,'Entity ID required.')
        
-        only_public = True if self.get_argument('public', '0') == '1' else False
-        full_definition = True if self.get_argument('full_definition','false') == 'true' else False
+        only_public = True if self.get_argument('public',default=None,strip=True) == '1' else False
+        full_definition = True if self.get_argument('full_definition',default=None,strip=True) == 'true' else False
         
         entity = db.Entity(user_locale=self.get_user_locale())
        
@@ -206,7 +206,7 @@ class GetEntityProperties(myRequestHandler):
     """
     
     def get(self):        
-        entity_definition_keyname = self.get_argument('entity_definition_keyname',None)
+        entity_definition_keyname = self.get_argument('entity_definition_keyname',default=None,strip=True)
         
         if not entity_definition_keyname:
             raise web.HTTPError(400,'entity_definition_keyname required.')
@@ -256,7 +256,7 @@ class GetAllowedChilds(myRequestHandler):
     
     """    
     def get(self):
-        entity_id = self.get_argument('entity_id', None)
+        entity_id = self.get_argument('entity_id',default=None,strip=True)
         
         if not entity_id:
             raise web.HTTPError(400,'entity_id required')
@@ -401,7 +401,7 @@ class SaveProperty(myRequestHandler):
       
         # if data is passed as json
         if not entity_id and not property_definition_keyname:
-            properties = self.get_argument('properties', None)
+            properties = self.get_argument('properties',default=None,strip=True)
             if not properties:
                 raise web.HTTPError(400, 'Invalid data passed')
             
