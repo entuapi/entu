@@ -84,5 +84,9 @@ class myApplication(tornado.web.Application):
 if __name__ == '__main__':
     tornado.locale.load_translations(path.join(path.dirname(__file__), '..', 'translations'))
     tornado.options.parse_command_line()
-    tornado.httpserver.HTTPServer(myApplication(), xheaders=True).listen(options.port)
+    os.path.dirname(os.path.realpath(__file__))
+    tornado.httpserver.HTTPServer(myApplication(), xheaders=True, ssl_options={
+                            "certfile":path.join(os.path.dirname(os.path.realpath(__file__)),"..","ssl","api.crt"),
+                            "keyfile":path.join(os.path.dirname(os.path.realpath(__file__)),"..","ssl","api.key"),
+                                                                               }).listen(options.port)
     tornado.ioloop.IOLoop.instance().start()
