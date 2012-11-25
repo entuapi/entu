@@ -6,21 +6,41 @@ from sqlalchemy import *
 """
 Test for controlling validity of property creating.
 
+--HELP
 How to use:
-python save_property_test.py ['entity_id'] ['property_definition_keyname'] ['value']
+1) Firstly, create text file. This text file will be used to read 
+    values that you want to give, so please use
+    default structure of content, otherwise test fails.
+    Put this line into your text file (to the first line):
+    
+    entity_id:,property_definition_keyname:,value:,public:,file:
+    
+    Now simply put your values to the appropriate places. If you do not want to
+    give any value, you can just remove it. Do not use quotes for values with String type.
+    Example: 
+    entity_id:3,property_definition_keyname:library-name,value:Ester
+    
+2) Then run:
+    python save_property_test.py ['text_file.txt']
+    Example:
+    python save_property_test.py propertyToSave.txt
 
-! Where
+--NEED TO KNOW
 ['entity_id'] and ['property_definition_keyname'] are mandatory
-['value'] is optional
+['value'], ['public'] and ['file'] are optional
 
-EXAMPLE:
-python save_property_test.py 3 library-name Ester
+$entity_id = (int)
+$property_definition_keyname = (string)
+$value = *
+$public = [(true)|(false)]
+$file = (string)
+
 """
 
-#Arguments
-entityId = None
-propertyDefinition = None
-value = None
+
+
+# Arguments
+textFile = None
 
 def getLastId():
        db = create_engine('mysql://root:1234@localhost/entudb', echo=False)
@@ -31,14 +51,20 @@ def getLastId():
        rs = s.execute()
        for row in rs:
            ids.append(row.id)
-       #Return current maximum property id
+       # Return current maximum property id
        return max(ids)
 
 def getArgs():
-       query_args = {}
-       query_args['entity_id'] = entityId
-       query_args['property_definition_keyname'] = propertyDefinition
-       return query_args
+    file = open(txtFile, 'r')
+    entries = map(lambda entry: entry.rstrip('\n').split(','), file.readlines())
+    query_args = {}
+    for value in entries[0]:
+        attribute = value.split(':')
+        try:
+            query_args[attribute[0]] = int(attribute[1])
+        except ValueError:
+            query_args[attribute[0]] = attribute[1]
+    return query_args
 
 def getValue(argIndex):
        if argIndex < len(sys.argv):
@@ -53,21 +79,14 @@ class TestSaveProperty(unittest.TestCase):
        
     def test_changeExistingProperty(self):
        query_args = getArgs()
-       if value:
-           query_args['value'] = value
        encoded_args = urllib.urlencode(query_args)
        expected_response = '{"property_id": %s}' % str(self.lastId + 1)           
-   
        actual_response = urllib.urlopen("%s?%s" % (self.url, encoded_args)).read()
        self.assertEqual(expected_response, actual_response)
        
 if __name__ == "__main__":
-   entityId = getValue(1)
-   propertyDefinition = getValue(2)
-   value = getValue(3)    
-   if not entityId:
-       print 'Error: No entity id given!'
-   elif not propertyDefinition:
-       print 'Error: No property definition keyname given!'
-   else:
-           unittest.main(argv=[sys.argv[0]])
+    txtFile = getValue(1)    
+    if not txtFile:
+        print 'Error: No text file given!'
+    else:
+        unittest.main(argv=[sys.argv[0]])
