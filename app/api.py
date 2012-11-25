@@ -11,7 +11,7 @@ import string
 import hashlib
 import random
 import time
-
+import magic
 
 class Search (myRequestHandler):
     """
@@ -99,10 +99,7 @@ class Search (myRequestHandler):
             
     """
     def get(self):
-       
-        ids_only = False
         full_info = True if self.get_argument('full_info','false') == 'true' else False
-        entity_id = None
         keywords = self.get_argument('search', None)
         entity_definition = self.get_argument('entity_definition_keyname', None)
         dataproperty = self.get_argument('dataproperty', None)
@@ -112,7 +109,7 @@ class Search (myRequestHandler):
               
         entity = db.Entity(user_locale=self.get_user_locale())
         
-        result = entity.get(ids_only=ids_only, entity_id=entity_id, search=keywords,
+        result = entity.get(ids_only=False, search=keywords,
                             entity_definition_keyname=entity_definition, dataproperty=dataproperty, limit=limit,
                             full_definition=full_definition, only_public=public)
        
@@ -160,9 +157,7 @@ class View (myRequestHandler):
                 DEFAULT = false
     
     """    
-    def get(self):
-        entity = db.Entity(user_locale=self.get_user_locale())
-        
+    def get(self):        
         entity_id = self.get_argument('entity_id',None)
        
         if not entity_id:
@@ -170,6 +165,8 @@ class View (myRequestHandler):
        
         only_public = True if self.get_argument('public', '0') == '1' else False
         full_definition = True if self.get_argument('full_definition','false') == 'true' else False
+        
+        entity = db.Entity(user_locale=self.get_user_locale())
        
         result = entity.get(entity_id=self.get_argument('id'), limit=1, full_definition=full_definition, only_public=only_public)
        
@@ -208,13 +205,13 @@ class GetEntityProperties(myRequestHandler):
     
     """
     
-    def get(self):
-        entity = db.Entity(user_locale=self.get_user_locale())
-        
+    def get(self):        
         entity_definition_keyname = self.get_argument('entity_definition_keyname',None)
         
         if not entity_definition_keyname:
             raise web.HTTPError(400,'entity_definition_keyname required.')
+        
+        entity = db.Entity(user_locale=self.get_user_locale())
         
         self.write(json.dumps(entity.get_definition(entity_definition_keyname)))
 
@@ -259,12 +256,12 @@ class GetAllowedChilds(myRequestHandler):
     
     """    
     def get(self):
-        entity = entity = db.Entity(user_locale=self.get_user_locale())
-        
         entity_id = self.get_argument('entity_id', None)
         
         if not entity_id:
             raise web.HTTPError(400,'entity_id required')
+        
+        entity = db.Entity(user_locale=self.get_user_locale())
         
         self.write(json.dumps(entity.get_allowed_childs(entity_id)))
         
@@ -275,10 +272,12 @@ class SaveEntity(myRequestHandler):
     Needs entity ID and optionally parent ID.
     Return Entity ID.
     
-    save_entity?entity_definition_keyname=$entity_definition_keyname[&parent_entity_id=$parent_entity_id]
+    save_entity?entity_definition_keyname=$entity_definition_keyname[&parent_entity_id=$parent_entity_id][&public=$public]
+    
     
     $entity_definition_keyname = (string)
     $parent_entity_id = (int)
+    $public = [(true)|(false)]
     
     Parameters:
     
@@ -291,6 +290,10 @@ class SaveEntity(myRequestHandler):
         
                 e.g. ?parent_entity_definition=514
                 
+        
+        public - allows entity to be seen without authentication
+        
+                e.g. ?public=true
                 
     Returns:
     
@@ -303,18 +306,21 @@ class SaveEntity(myRequestHandler):
             {'entity_id':ID}
     
     """
-    def get(self):
-       entity = db.Entity(user_locale=self.get_user_locale())
-       parent_entity_id = self.get_argument('parent_entity_id', default=None, strip=True)
-       entity_definition_keyname = self.get_argument('entity_definition_keyname', default=None, strip=True)
+    def get(self):       
+        parent_entity_id = self.get_argument('parent_entity_id', default=None, strip=True)
+        entity_definition_keyname = self.get_argument('entity_definition_keyname', default=None, strip=True)
+        public = True if self.get_argument('public', default=None, strip=True) == 'true' else False
       
-       if entity_definition_keyname != None:
-           entity_id = entity.create(entity_definition_keyname=entity_definition_keyname, parent_entity_id=parent_entity_id)
-           self.write({
-               'entity_id':entity_id
-           })
-       else:
-           raise web.HTTPError(400, 'To create a new Entity entity_definition_keyname is required.')
+        if entity_definition_keyname != None:
+            entity = db.Entity(user_locale=self.get_user_locale())
+            entity_id = entity.create(entity_definition_keyname=entity_definition_keyname, parent_entity_id=parent_entity_id)
+            if public:
+                entity.set_public(entity_id,is_public=public)            
+            self.write({
+                        'entity_id':entity_id
+            })
+        else:
+            raise web.HTTPError(400, 'To create a new Entity entity_definition_keyname is required.')
 
 class SaveProperty(myRequestHandler):  
     """
@@ -324,7 +330,7 @@ class SaveProperty(myRequestHandler):
     
     #1  save_property?entity_id=$entity_id&property_definition_keyname=$property_Definition_keyname
     
-        [&property_id=$property_id][&value=$value][&public=$public]
+        [&property_id=$property_id][&value=$value]
     
           
     #2 save_property?properties=$properties
@@ -335,7 +341,6 @@ class SaveProperty(myRequestHandler):
                           'property_definition_keyname':$property_definition_keyname#1
                           [,'property_id':$property_id#1]
                           [,'value':$value#1]
-                          [,'public':$public#1]
                           [,'file':$file#1]
                         }
                         ,...,
@@ -344,7 +349,6 @@ class SaveProperty(myRequestHandler):
                           'property_definition_keyname':$property_definition_keyname#N
                           [,'property_id':$property_id#N]
                           [,'value':$value#N]
-                          [,'public':$public#N]
                           [,'file':$file#N]
                         }
                       ]
@@ -353,7 +357,6 @@ class SaveProperty(myRequestHandler):
     $property_definition_keyname = (string)
     $property_id = (int)
     $value = *
-    $public = [(true)|(false)]
     $file = (string)
     
     Parameters:
@@ -370,9 +373,6 @@ class SaveProperty(myRequestHandler):
         
         
         value - value for the given property
-        
-        
-        public - ?
         
         
         file (ONLY IN JSON) - name of the uploaded file
@@ -418,8 +418,6 @@ class SaveProperty(myRequestHandler):
                 property_definition_keyname = property.setdefault('property_definition_keyname',None)
                 property_id = property.setdefault('property_id',None)
                 value = property.setdefault('value',None)
-                public = property.setdefault('public','false')
-                public = True if public != 'false' else False
                 uploaded_file_name = property.setdefault('file',None)
                 uploaded_file = self.request.files.get(uploaded_file_name,None) if uploaded_file_name != None else None
                 
@@ -434,7 +432,6 @@ class SaveProperty(myRequestHandler):
         else:      
             property_id = self.get_argument('property_id', default=None, strip=True)
             value = self.get_argument('value', default=None, strip=True)
-            public = True if self.get_argument('public', default='false', strip=True) == 'true' else False
             uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
           
             entity = db.Entity(user_locale=self.get_user_locale())
@@ -445,6 +442,49 @@ class SaveProperty(myRequestHandler):
                 })
             else:
                 raise web.HTTPError(400, 'Entity ID required')
+
+
+class GetFile(myRequestHandler):
+    @web.authenticated
+    def get(self):
+        """
+        Returns file using file_id.
+        
+        get_file?file_id=$file_id
+        
+        $file_id = (int)
+        
+        
+        Parameters:
+        
+            file_id (REQUIRED) - ID of the desired file
+         
+            
+        Returns:
+        
+            file
+        
+        """
+        
+        file_id = self.get_argument('file_id',default=None,strip=True)
+            
+        if not file:
+            return self.missing()    
+            
+        file = db.Entity(user_locale=self.get_user_locale(), user_id=self.current_user.id).get_file(file_id)
+        
+        if not file:
+            return self.missing()
+
+        ms = magic.open(magic.MAGIC_MIME)
+        ms.load()
+        mime = ms.buffer(file.file)
+        ms.close()
+
+        self.add_header('Content-Type', mime)
+        self.add_header('Content-Disposition', 'attachment; filename="%s"' % file.filename)
+        self.write(file.file)
+  
   
 def datetime_to_ISO8601(entity_list):
     """
@@ -463,5 +503,6 @@ handlers = [
     ('/search', Search),
     ('/save_property', SaveProperty),
     ('/get_entity_properties', GetEntityProperties),
-    ('/get_allowed_childs',GetAllowedEntities),
+    ('/get_allowed_childs',GetAllowedChilds),
+    ('/get_file',GetFile)
 ]
