@@ -17,6 +17,7 @@ How to use:
     
     Now simply put your values to the appropriate places. If you do not want to
     give any value, you can just remove it. Do not use quotes for values with String type.
+    CONTROL THAT THERE ARE NO EXTRA SPACES USED!
     Example: 
     entity_id:3,property_definition_keyname:library-name,value:Ester
     
