@@ -168,7 +168,7 @@ class View (myRequestHandler):
         
         entity = db.Entity(user_locale=self.get_user_locale())
        
-        result = entity.get(entity_id=self.get_argument('id'), limit=1, full_definition=full_definition, only_public=only_public)
+        result = entity.get(entity_id=entity_id, limit=1, full_definition=full_definition, only_public=only_public)
        
         if not result:
             return self.missing()
