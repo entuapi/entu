@@ -15,7 +15,7 @@ How to use:
     default structure of content, otherwise test fails.
     Put this line into your text file (to the first line):
     
-    entity_id:,property_definition_keyname:,property_id:,value:,public:,file:
+    entity_id:,property_definition_keyname:,property_id:,value:,file:
     
     Now simply put your values to the appropriate places. If you do not want to
     give any value, you can just remove it. Do not use quotes for values with String type.
@@ -30,13 +30,12 @@ How to use:
 
 --NEED TO KNOW
 ['entity_id'], ['property_id'] and ['property_definition_keyname'] are mandatory
-['value'], ['public'] and ['file'] are optional
+['value'] and ['file'] are optional
 
 $entity_id = (int)
 $property_definition_keyname = (string)
 $property_id = (int)
 $value = *
-$public = [(true)|(false)]
 $file = (string)
 
 """
