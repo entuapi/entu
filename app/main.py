@@ -22,8 +22,8 @@ define('mysql_password', help = 'mysql database password',  type = str)
 
 # List of controllers to load.
 controllers = [
-    'api',
     'auth',
+    'api',
 ]
 
 
@@ -60,7 +60,6 @@ class myApplication(tornado.web.Application):
                 logging.info('%s.py -> %s' % (controller, h[0]))
         handlers.append((r'(.*)', PageNotFound))
 
-
         settings = {
             'template_path':    path.join(path.dirname(__file__), '..', 'templates'),
             'static_path':      path.join(path.dirname(__file__), '..', 'static'),
@@ -82,9 +81,9 @@ class myApplication(tornado.web.Application):
 
 
 if __name__ == '__main__':
+    tornado.options.enable_pretty_logging()
     tornado.locale.load_translations(path.join(path.dirname(__file__), '..', 'translations'))
     tornado.options.parse_command_line()
-    os.path.dirname(os.path.realpath(__file__))
     tornado.httpserver.HTTPServer(myApplication(), xheaders=True, ssl_options={
                             "certfile":path.join(os.path.dirname(os.path.realpath(__file__)),"..","ssl","api.crt"),
                             "keyfile":path.join(os.path.dirname(os.path.realpath(__file__)),"..","ssl","api.key"),

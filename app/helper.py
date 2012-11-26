@@ -60,7 +60,6 @@ class myRequestHandler(RequestHandler):
 
         """
         session_key = self.get_secure_cookie('session')
-        #session_key = "fafaa"
         if not session_key:
             return
         user_key = hashlib.md5(self.request.remote_ip + self.request.headers.get('User-Agent', None)).hexdigest()
@@ -71,8 +70,10 @@ class myRequestHandler(RequestHandler):
             return
 
         if not user.picture:
-            user.picture = 'http://www.gravatar.com/avatar/%s?d=monsterid' % (hashlib.md5(user.email).hexdigest())
+            user.picture = 'https://secure.gravatar.com/avatar/%s?d=wavatar&s=100' % (hashlib.md5(user.email).hexdigest())
             user['picture'] = user.picture
+
+        user['session'] = session_key
 
         return user
 
