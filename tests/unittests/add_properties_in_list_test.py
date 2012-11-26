@@ -17,10 +17,10 @@ How to use:
     put this line into your text file (to the first line) (to add more properties just copy same text 
     into next lines of your file):
     
-    entity_id:,property_definition_keyname:,value:,public:,file:
-    entity_id:,property_definition_keyname:,value:,public:,file:
+    entity_id:,property_definition_keyname:,value:,file:
+    entity_id:,property_definition_keyname:,value:,file:
     ...
-    entity_id:,property_definition_keyname:,value:,public:,file:
+    entity_id:,property_definition_keyname:,value:,file:
     
     Now simply put your values to the appropriate places. If you do not want to
     give any value, you can just remove it. Do not use quotes for values with String type.
@@ -29,7 +29,7 @@ How to use:
     entity_id:3,property_definition_keyname:library-name,value:Ester
     entity_id:5,property_definition_keyname:institution-name,value:UT
     ...
-    entity_id:2,property_definition_keyname:person-user,value:example@entu.com,public:true
+    entity_id:2,property_definition_keyname:person-user,value:example@entu.com
     
 2) Then run:
     python add_properties_in_list_test.py ['text_file.txt']
@@ -38,12 +38,11 @@ How to use:
 
 --NEED TO KNOW
 ['entity_id'] and ['property_definition_keyname'] are mandatory
-['value'], ['public'] and ['file'] are optional
+['value'] and ['file'] are optional
 
 $entity_id = (int)
 $property_definition_keyname = (string)
 $value = *
-$public = [(true)|(false)]
 $file = (string)
 
 """
