@@ -488,10 +488,16 @@ class GetFile(myRequestHandler):
 
 class GetSession(myRequestHandler):
     """
+    
+    Creates new session for authenticated user.
+    
+    Returns:
+    
+        {'session_key':$session_key}
+    
     """
     @web.authenticated
     def get(self):
-        #self.write(self.current_user.session)
         pass
   
 def datetime_to_ISO8601(entity_list):

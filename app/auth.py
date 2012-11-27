@@ -22,7 +22,6 @@ class AuthOAuth2(myRequestHandler, auth.OAuth2Mixin):
     """
     @web.asynchronous
     def get(self, provider):
-        set_redirect(self)
         self.oauth2_provider = None
 
         if provider == 'facebook' and 'facebook_api_key' in self.settings and 'facebook_secret' in self.settings:
@@ -89,7 +88,7 @@ class AuthOAuth2(myRequestHandler, auth.OAuth2Mixin):
 
         if self.get_argument('error', None):
             logging.error('%s oauth error: %s' % (provider, self.get_argument('error', None)))
-            return self.redirect(get_redirect(self))
+            
 
         httpclient.AsyncHTTPClient().fetch(self.oauth2_provider['token_url'],
             method = 'POST',
@@ -111,18 +110,18 @@ class AuthOAuth2(myRequestHandler, auth.OAuth2Mixin):
             access_token = json.loads(access_token)
             if 'error' in access_token:
                 logging.error('%s oauth error: %s' % (provider, access_token['error']))
-                return self.redirect(get_redirect(self))
+                raise web.HTTPError(401,'Authorization error')
             access_token = access_token['access_token']
         except:
             try:
                 access_token = urlparse.parse_qs(access_token)
                 if 'error' in access_token:
                     logging.error('%s oauth error: %s' % (provider, access_token['error']))
-                    return self.redirect(get_redirect(self))
+                    raise web.HTTPError(401,'Authorization error')
                 access_token = access_token['access_token'][0]
             except:
                 logging.error('%s oauth error' % provider)
-                return self.redirect(get_redirect(self))
+                raise web.HTTPError(401,'Authorization error')
 
         httpclient.AsyncHTTPClient().fetch(self.oauth2_provider['info_url'] %  {'token': access_token },
             callback = self._got_user
@@ -130,13 +129,11 @@ class AuthOAuth2(myRequestHandler, auth.OAuth2Mixin):
 
     @web.asynchronous
     def _got_user(self, response):
-        try:
-            user = json.loads(response.body)
-            if 'error' in user:
-                logging.error('%s oauth error: %s' % (provider, user['error']))
-                return self.redirect(get_redirect(self))
-        except:
-            return
+
+        user = json.loads(response.body)
+        if 'error' in user:
+            logging.error('%s oauth error: %s' % (provider, user['error']))
+            raise web.HTTPError(401,'Authorization error')
 
         if self.oauth2_provider['provider'] == 'facebook':
             LoginUser(self, {
@@ -163,8 +160,6 @@ class AuthOAuth2(myRequestHandler, auth.OAuth2Mixin):
                 'picture':  'https://apis.live.net/v5.0/%s/picture' % user.setdefault('id', ''),
             })
 
-        #self.redirect(get_redirect(self))
-
 
 class AuthMobileID(myRequestHandler, auth.OpenIdMixin):
     """
@@ -173,7 +168,6 @@ class AuthMobileID(myRequestHandler, auth.OpenIdMixin):
     """
     @web.asynchronous
     def get(self):
-        set_redirect(self)
         self._OPENID_ENDPOINT = 'https://openid.ee/server/xrds/mid'
 
         if not self.get_argument('openid.mode', None):
@@ -187,7 +181,6 @@ class AuthMobileID(myRequestHandler, auth.OpenIdMixin):
             raise web.HTTPError(500, 'MobileID auth failed')
 
         LoginUser(self, {'id': self.get_argument('openid.identity', None)})
-        #self.redirect(get_redirect(self))
 
 
 class AuthIDcard(myRequestHandler, auth.OpenIdMixin):
@@ -197,7 +190,6 @@ class AuthIDcard(myRequestHandler, auth.OpenIdMixin):
     """
     @web.asynchronous
     def get(self):
-        set_redirect(self)
         self._OPENID_ENDPOINT = 'https://openid.ee/server/eid'
 
         if not self.get_argument('openid.mode', None):
@@ -210,7 +202,6 @@ class AuthIDcard(myRequestHandler, auth.OpenIdMixin):
             raise web.HTTPError(500, 'IDcard auth failed')
 
         LoginUser(self, {'id': self.get_argument('openid.identity', None)})
-        #self.redirect(get_redirect(self))
 
 
 class AuthTwitter(myRequestHandler, auth.TwitterMixin):
@@ -220,7 +211,6 @@ class AuthTwitter(myRequestHandler, auth.TwitterMixin):
     """
     @web.asynchronous
     def get(self):
-        set_redirect(self)
         if not self.get_argument('oauth_token', None):
             return self.authenticate_redirect()
         self.get_authenticated_user(self.async_callback(self._got_user))
@@ -236,7 +226,6 @@ class AuthTwitter(myRequestHandler, auth.TwitterMixin):
             'name':     user.setdefault('name'),
             'picture':  user.setdefault('profile_image_url'),
         })
-        #self.redirect(get_redirect(self))
 
 
 class Exit(myRequestHandler):
@@ -274,7 +263,8 @@ def LoginUser(rh, user):
         session     = session_key+user_key
     )
 
-    rh.write({'session':str(session_key)})
+    rh.write({'session_key':str(session_key)})
+    self.finish()
 
 def set_redirect(rh):
     """

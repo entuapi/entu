@@ -57,6 +57,19 @@ class myRequestHandler(RequestHandler):
         self.set_status(404)
         self.write('Page not found!')
 
+    def get_user_by_session_key(self,session_key):
+        user_key = hashlib.md5(self.request.remote_ip + self.request.headers.get('User-Agent', None)).hexdigest()
+        user = db.User(session=session_key+user_key)
+        
+        if not user.id:
+            return
+        
+        if not user.picture:
+            user.picture = 'https://secure.gravatar.com/avatar/%s?d=wavatar&s=100' % (hashlib.md5(user.email).hexdigest())
+            user['picture'] = user.picture
+            
+        return user
+
     def get_current_user(self):
         """
         Sets and returns logged in user. Properties are, id (Entity ID!), name, language, email, picture. If picture is not set returns gravatar.com picture url.
