@@ -64,7 +64,7 @@ class myApplication(tornado.web.Application):
             'template_path':    path.join(path.dirname(__file__), '..', 'templates'),
             'static_path':      path.join(path.dirname(__file__), '..', 'static'),
             'debug':            True if str(options.debug).lower() == 'true' else False,
-            'login_url':        '/auth/google',
+            'login_url':        '/auth/facebook',
             'xsrf_coocies':     True,
         }
 

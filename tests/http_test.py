@@ -21,6 +21,7 @@
 import urllib
 import sys
 from time import gmtime, strftime
+import json
 
 conf_file = 'http_test.conf'
 
@@ -42,9 +43,36 @@ for entry in config_entries:
 for file_name in sys.argv[1:-1]:
     input = open(file_name,'r')
     line = input.readline().rstrip('\n')
+    
+    variables = {}
 
     while line:
         id,query,expected_response = line.rstrip('\n').split(sys.argv[-1])
+        
+        # find variable name
+        variable_end_idx = query.find("<-")
+        if variable_end_idx != -1:
+            variable_name = query[query.find('$')+1:variable_end_idx].rstrip()
+        
+        # replace all variables in the query
+        start_idx = query[(variable_end_idx if variable_end_idx != -1 else 0):].find('$')
+        i = start_idx
+        while(i < len(query)):
+            if query[i] == '$':
+                j = 0
+                while(i+j) != '$':
+                    j+=1
+                # find recurively the value if object has nested objects
+                scope = query[i+1:i+j].split('@')
+                variable_val = variables[scope[0]]
+                for s in scope[1:]:
+                    variable_val = variable_val[s]
+                
+                query = query[:i] + variable_val + query[i+j+1:]
+                i += i + len(str(variable_val))
+            else:
+                i += 1
+        
         
         # find handler name        
         handler_start_idx = query.rfind('/')+1
@@ -69,6 +97,8 @@ for file_name in sys.argv[1:-1]:
         
         actual_response = urllib.urlopen(url, encoded_args).read() if method == 'POST' else urllib.urlopen("%s?%s"%(url,encoded_args)).read()
         
+        if variable_end_idx != -1:
+            variables[variable_name] = json.loads(actual_response)
         
         if actual_response != expected_response:
             failures += 1

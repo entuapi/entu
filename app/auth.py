@@ -163,7 +163,7 @@ class AuthOAuth2(myRequestHandler, auth.OAuth2Mixin):
                 'picture':  'https://apis.live.net/v5.0/%s/picture' % user.setdefault('id', ''),
             })
 
-        self.redirect(get_redirect(self))
+        #self.redirect(get_redirect(self))
 
 
 class AuthMobileID(myRequestHandler, auth.OpenIdMixin):
@@ -187,7 +187,7 @@ class AuthMobileID(myRequestHandler, auth.OpenIdMixin):
             raise web.HTTPError(500, 'MobileID auth failed')
 
         LoginUser(self, {'id': self.get_argument('openid.identity', None)})
-        self.redirect(get_redirect(self))
+        #self.redirect(get_redirect(self))
 
 
 class AuthIDcard(myRequestHandler, auth.OpenIdMixin):
@@ -210,7 +210,7 @@ class AuthIDcard(myRequestHandler, auth.OpenIdMixin):
             raise web.HTTPError(500, 'IDcard auth failed')
 
         LoginUser(self, {'id': self.get_argument('openid.identity', None)})
-        self.redirect(get_redirect(self))
+        #self.redirect(get_redirect(self))
 
 
 class AuthTwitter(myRequestHandler, auth.TwitterMixin):
@@ -236,7 +236,7 @@ class AuthTwitter(myRequestHandler, auth.TwitterMixin):
             'name':     user.setdefault('name'),
             'picture':  user.setdefault('profile_image_url'),
         })
-        self.redirect(get_redirect(self))
+        #self.redirect(get_redirect(self))
 
 
 class Exit(myRequestHandler):
@@ -252,7 +252,7 @@ class Exit(myRequestHandler):
             if self.current_user.provider == 'application':
                 redirect_url = '/application'
 
-        self.clear_cookie('session')
+        #self.clear_cookie('session')
         self.redirect(redirect_url)
 
 
@@ -274,7 +274,7 @@ def LoginUser(rh, user):
         session     = session_key+user_key
     )
 
-    rh.set_secure_cookie('session', str(session_key))
+    rh.write({'session':str(session_key)})
 
 def set_redirect(rh):
     """

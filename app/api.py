@@ -484,7 +484,15 @@ class GetFile(myRequestHandler):
         self.add_header('Content-Type', mime)
         self.add_header('Content-Disposition', 'attachment; filename="%s"' % file.filename)
         self.write(file.file)
-  
+        
+
+class GetSession(myRequestHandler):
+    """
+    """
+    @web.authenticated
+    def get(self):
+        #self.write(self.current_user.session)
+        pass
   
 def datetime_to_ISO8601(entity_list):
     """
@@ -504,5 +512,6 @@ handlers = [
     ('/save_property', SaveProperty),
     ('/get_entity_properties', GetEntityProperties),
     ('/get_allowed_childs',GetAllowedChilds),
-    ('/get_file',GetFile)
+    ('/get_file',GetFile),
+    ('/get_session',GetSession)
 ]
