@@ -84,8 +84,9 @@ if __name__ == '__main__':
     tornado.options.enable_pretty_logging()
     tornado.locale.load_translations(path.join(path.dirname(__file__), '..', 'translations'))
     tornado.options.parse_command_line()
-    tornado.httpserver.HTTPServer(myApplication(), xheaders=True, ssl_options={
-                            "certfile":path.join(path.dirname(path.realpath(__file__)),"..","ssl","api.crt"),
-                            "keyfile":path.join(path.dirname(path.realpath(__file__)),"..","ssl","api.key"),
-                                                                               }).listen(options.port)
+    #tornado.httpserver.HTTPServer(myApplication(), xheaders=True, ssl_options={
+    #                        "certfile":path.join(path.dirname(path.realpath(__file__)),"..","ssl","api.crt"),
+    #                        "keyfile":path.join(path.dirname(path.realpath(__file__)),"..","ssl","api.key"),
+    #                                                                           }).listen(options.port)
+    tornado.httpserver.HTTPServer(myApplication(), xheaders=True).listen(options.port)
     tornado.ioloop.IOLoop.instance().start()

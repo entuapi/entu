@@ -264,7 +264,7 @@ def LoginUser(rh, user):
     )
 
     rh.write({'session_key':str(session_key)})
-    self.finish()
+    rh.finish()
 
 def set_redirect(rh):
     """
