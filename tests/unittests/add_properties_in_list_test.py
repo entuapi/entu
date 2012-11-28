@@ -37,11 +37,18 @@ How to use:
     python add_properties_in_list_test.py propertiesToAdd.txt
 
 --NEED TO KNOW
-['entity_id'] and ['property_definition_keyname'] are mandatory
+['entity_id'], ['property_definition_keyname'] and ['session_key'] are mandatory
 ['value'] and ['file'] are optional
+
+/***/
+
+$session_key = 'dummysession' as default for tests
+
+/***/
 
 $entity_id = (int)
 $property_definition_keyname = (string)
+$session_key = (string)
 $value = *
 $file = (string)
 
@@ -84,10 +91,10 @@ def getProperties():
     properties, sum = getPropertiesInJSON()
     return json.dumps(properties), sum
   
-def getExpectedResponse(lastId,sum):
+def getExpectedResponse(lastId, sum):
     response = "["
-    for i in range(1,sum+1):
-        if i==sum:
+    for i in range(1, sum + 1):
+        if i == sum:
             response += str(lastId + i)
         else:    
             response += str(lastId + i) + ", "
@@ -96,16 +103,16 @@ def getExpectedResponse(lastId,sum):
 
 class TestSaveProperty(unittest.TestCase):
     def setUp(self):
-        self.url = 'http://ec2-54-247-135-135.eu-west-1.compute.amazonaws.com:3307/save_property'
+        self.url = 'http://ec2-54-247-135-135.eu-west-1.compute.amazonaws.com:3307/api/save_properties'
         self.lastId = getLastId()
+        properties, self.sum = getProperties()
+        self.query_args = {}
+        self.query_args['properties'] = properties
         
     def test_changeExistingProperties(self):
-        properties, sum = getProperties()
-        query_args = {}
-        query_args['properties'] = properties
-        encoded_args = urllib.urlencode(query_args)
-        expected_response = getExpectedResponse(self.lastId,sum)
-    
+        self.query_args['session_key'] = 'dummysession'
+        encoded_args = urllib.urlencode(self.query_args)
+        expected_response = getExpectedResponse(self.lastId, self.sum)
         actual_response = urllib.urlopen("%s?%s" % (self.url, encoded_args)).read()
         self.assertEqual(expected_response, actual_response)
         
