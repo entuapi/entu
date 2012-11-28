@@ -7,6 +7,7 @@ import tornado.httpserver
 import tornado.database
 import tornado.options
 from tornado.options import define, options
+import tornado
 
 import logging
 
