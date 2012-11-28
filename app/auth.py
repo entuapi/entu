@@ -226,25 +226,7 @@ class AuthTwitter(myRequestHandler, auth.TwitterMixin):
             'name':     user.setdefault('name'),
             'picture':  user.setdefault('profile_image_url'),
         })
-
-
-class Logout(myRequestHandler):
-    """
-    Log out.
-
-    """
-    def get(self):
         
-        session_key = self.get_argument('session_key',default=None,strip=True)
-        
-        if not session_key:
-            web.HTTPError(401,'Unauthorized')
-            
-        response = db.Entity(user_locale=self.get_user_locale()).end_session(session_key)
-    
-        if not response:
-            raise web.HTTPError(500,'No session with given session_key existing')
-        self.finish()
 
 def LoginUser(rh, user):
     """
@@ -289,5 +271,4 @@ handlers = [
     ('/auth/idcard', AuthIDcard),
     ('/auth/twitter', AuthTwitter),
     ('/auth/(.*)', AuthOAuth2),
-    ('/logout', Logout),
 ]

@@ -268,11 +268,11 @@ class GetEntityProperties(myRequestHandler):
         self.write(json.dumps(result))
 
 
-class GetAllowedChilds(myRequestHandler):
+class GetAllowedChildren(myRequestHandler):
     """
     Returns allowed child-entity definitions, when entity_id is provided
     
-    get_allowed_childs?entity_id=$entity_id
+    get_allowed_children?entity_id=$entity_id
     
     $entity_id = (int)
     
@@ -651,6 +651,26 @@ class GetSession(myRequestHandler):
     @web.authenticated
     def get(self):
         pass
+    
+
+class Logout(myRequestHandler):
+    """
+    Log out.
+
+    """
+    def get(self):
+        
+        session_key = self.get_argument('session_key',default=None,strip=True)
+        
+        if not session_key:
+            web.HTTPError(401,'Unauthorized')
+            
+        response = db.Entity(user_locale=self.get_user_locale()).end_session(session_key)
+    
+        if not response:
+            raise web.HTTPError(500,'No session with given session_key existing')
+        self.finish()
+        
   
 def datetime_to_ISO8601(entity_list):
     """
@@ -669,7 +689,8 @@ handlers = [
     ('/api/search', Search),
     ('/api/save_property', SaveProperty),
     ('/api/get_entity_properties', GetEntityProperties),
-    ('/api/get_allowed_childs',GetAllowedChilds),
+    ('/api/get_allowed_children',GetAllowedChildren),
     ('/api/get_file',GetFile),
-    ('/api/get_session',GetSession)
+    ('/api/get_session',GetSession),
+    ('/api/logout',Logout),
 ]
