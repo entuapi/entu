@@ -669,6 +669,7 @@ class Logout(myRequestHandler):
     
         if not response:
             raise web.HTTPError(500,'No session with given session_key existing')
+        self.set_status(200)
         self.finish()
         
   
