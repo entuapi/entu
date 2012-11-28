@@ -109,7 +109,7 @@ class TestSaveProperty(unittest.TestCase):
         self.query_args = {}
         self.query_args['properties'] = properties
         
-    def test_changeExistingProperties(self):
+    def test_addNewProperties(self):
         self.query_args['session_key'] = 'dummysession'
         encoded_args = urllib.urlencode(self.query_args)
         expected_response = getExpectedResponse(self.lastId, self.sum)
