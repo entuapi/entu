@@ -592,10 +592,10 @@ class SaveProperties(myRequestHandler):
             uploaded_file_name = property.setdefault('file',None)
             uploaded_file = self.request.files.get(uploaded_file_name,None) if uploaded_file_name != None else None
             
-            if entity_id and (property_definition_keyname or property_id):
+            if entity_id and (property_definition_keyname or property_id) and value:
                 property_id_list.append(entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file))
             else:
-                raise web.HTTPError(400, 'entity_id and property_definition_keyname required')
+                raise web.HTTPError(400, 'entity_id and (property_definition_keyname or property_id) and value required')
         
         if not property_id_list:
             return self.missing()
