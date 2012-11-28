@@ -21,7 +21,9 @@ class Search (myRequestHandler):
     
     search?[full_info=$full_info][&search=$search][&entity_definition_keyname=$entity_definition_keyname]
     
-    [&dataproperty=$dataproperty][&limit=$limit][&full_definition=$full_definition][&public=$public]
+    [&dataproperty=$dataproperty][&limit=$limit][&full_definition=$full_definition][&only_public=$only_public]
+    
+    [session_key=$session_key]
     
     
     $full_info = [(true)|(false)]
@@ -30,7 +32,8 @@ class Search (myRequestHandler):
     $dataproperty = (string)
     $limit = (int)
     $full_definition = [(true)|(false)]
-    $public = [(true)|(false)]
+    $only_public = [(true)|(false)]
+    $session_key = (string)
     
     Parameters:
     
@@ -73,11 +76,17 @@ class Search (myRequestHandler):
                     DEFAULT = false
                     
             
-        public - if 'true', returns only public entities with public properties
+        only_public - if 'true', returns only public entities with public properties
         
-                    e.g. ?public=true
+                    e.g. ?only_public=true
     
                     DEFAULT = false
+    
+    
+        session_key - string identifying user session, can be gained via get_session,
+                      if missing then behaves as only_public=true
+        
+                    e.g. ?session_key=asJGas236jsagHaj6Dahaf
     
     
     Returns:
@@ -86,7 +95,7 @@ class Search (myRequestHandler):
         
             HTTP status code 404
             
-        full_info = true:
+        full_info = false:
         
             [{'id':val1,'displayname':val2,'displayinfo':val3,'displaypicture':val4,'displaytable':val5},
              ...,
@@ -105,13 +114,18 @@ class Search (myRequestHandler):
         dataproperty = self.get_argument('dataproperty',default=None,strip=True)
         limit = self.get_argument('limit',default=None,strip=True)
         full_definition = True if self.get_argument('full_definition',default=None,strip=True) == 'true' else False
-        public = True if self.get_argument('public',default=None,strip=True) == 'true' else False
+        only_public = True if self.get_argument('only_public',default=None,strip=True) == 'true' else False
+        
+        user_id = self.get_user_by_session_key(self.get_argument('session_key',default=None,strip=True))['id']
+        
+        if not user_id:
+            only_public = True
               
-        entity = db.Entity(user_locale=self.get_user_locale())
+        entity = db.Entity(user_locale=self.get_user_locale(),user_id)
         
         result = entity.get(ids_only=False, search=keywords,
                             entity_definition_keyname=entity_definition, dataproperty=dataproperty, limit=limit,
-                            full_definition=full_definition, only_public=public)
+                            full_definition=full_definition, only_public=only_public)
        
         if not result:
             return self.missing()
@@ -138,23 +152,47 @@ class View (myRequestHandler):
     """
     Returns entity by entity_id.
     
-    view?entity_id=$entity_id[&public=$public][&full_definition=$full_definition]
+    view?entity_id=$entity_id[&only_public=$only_public][&full_definition=$full_definition][session_key=$session_key]
     
     $entity_id = (int)
-    $public = [(true)|(false)]
+    $only_public = [(true)|(false)]
     $full_definition = [(true)|(false)]
+    $session_key = (string)
     
     Parameters:
     
         entity_id (REQUIRED) - ID of the queried entity
         
-        public - if 'true', searches among entities which are public and have public property
+        
+        only_public - if 'true', searches among entities which are public and have public property
         
                 DEFAULT = false
+        
         
         full_definition - if 'true', includes properties that have empty values
         
                 DEFAULT = false
+                
+        
+        session_key - string identifying user session, can be gained via get_session,
+                      if missing then behaves as only_public=true
+        
+                    e.g. ?session_key=asJGas236jsagHaj6Dahaf
+                    
+    
+    Returns:
+    
+        No matching visible entity:
+        
+            HTTP status code 404
+            
+        entity_id parameter missing:
+        
+            HTTP status code 400
+            
+        otherwise:
+        
+            {entity_fields}
     
     """    
     def get(self):        
@@ -163,10 +201,15 @@ class View (myRequestHandler):
         if not entity_id:
             raise web.HTTPError(400,'Entity ID required.')
        
-        only_public = True if self.get_argument('public',default=None,strip=True) == '1' else False
+        only_public = True if self.get_argument('only_public',default=None,strip=True) == '1' else False
         full_definition = True if self.get_argument('full_definition',default=None,strip=True) == 'true' else False
         
-        entity = db.Entity(user_locale=self.get_user_locale())
+        user_id = self.get_user_by_session_key(self.get_argument('session_key',default=None,strip=True))['id']
+        
+        if not user_id:
+            only_public = True       
+        
+        entity = db.Entity(user_locale=self.get_user_locale(),self.get_user_by_session_key(session_key)['id'])
        
         result = entity.get(entity_id=entity_id, limit=1, full_definition=full_definition, only_public=only_public)
        
@@ -199,6 +242,10 @@ class GetEntityProperties(myRequestHandler):
         
             HTTP status 400
             
+        no properties for given entity_definition_keyname
+        
+            HTTP status 404
+            
         otherwise:
         
             [{property1_fields},...,{propertyN_fields}]
@@ -213,7 +260,12 @@ class GetEntityProperties(myRequestHandler):
         
         entity = db.Entity(user_locale=self.get_user_locale())
         
-        self.write(json.dumps(entity.get_definition(entity_definition_keyname)))
+        result = entity.get_definition(entity_definition_keyname)
+        
+        if not result:
+            return self.missing()
+        
+        self.write(json.dumps(result))
 
 
 class GetAllowedChilds(myRequestHandler):
@@ -232,27 +284,37 @@ class GetAllowedChilds(myRequestHandler):
         
     Returns:
     
-        [{"keyname":$keyname,"label":$label,"label_plural":$label_plural,"description":$description,"menugroup":$menugroup},...]
+        entity_id parameter missing:
         
-        $keyname = (string)
-        
-            entity_definition_keyname that can be used to create a new entity
+            HTTP status code 400
             
-        $label = (string)
+        given entity_id has no allowed childs:
         
-            title for displaying
-            
-        $label_plural = (string)
+            HTTP status code 404
     
-            title in plural for displaying
+        otherwise:
+    
+            [{"keyname":$keyname,"label":$label,"label_plural":$label_plural,"description":$description,"menugroup":$menugroup},...]
             
-        $description = (string)
-        
-            optional description of the entity type
+            $keyname = (string)
             
-        $menugroup = (string)
+                entity_definition_keyname that can be used to create a new entity
+                
+            $label = (string)
+            
+                title for displaying
+                
+            $label_plural = (string)
         
-            suggests a name for the menu title
+                title in plural for displaying
+                
+            $description = (string)
+            
+                optional description of the entity type
+                
+            $menugroup = (string)
+            
+                suggests a name for the menu title
     
     """    
     def get(self):
@@ -263,7 +325,12 @@ class GetAllowedChilds(myRequestHandler):
         
         entity = db.Entity(user_locale=self.get_user_locale())
         
-        self.write(json.dumps(entity.get_allowed_childs(entity_id)))
+        result = entity.get_allowed_childs(entity_id)
+        
+        if not result:
+            return self.missing()
+        
+        self.write(json.dumps(result))
         
      
 class SaveEntity(myRequestHandler):
@@ -272,18 +339,29 @@ class SaveEntity(myRequestHandler):
     Needs entity ID and optionally parent ID.
     Return Entity ID.
     
-    save_entity?entity_definition_keyname=$entity_definition_keyname[&parent_entity_id=$parent_entity_id][&public=$public]
+    save_entity?entity_definition_keyname=$entity_definition_keyname&session_key=$session_key
+    
+    [&parent_entity_id=$parent_entity_id][&public=$public]
     
     
     $entity_definition_keyname = (string)
+    $session_key = (string)
     $parent_entity_id = (int)
     $public = [(true)|(false)]
+    
     
     Parameters:
     
         entity_definition_keyname (REQUIRED) - type of the created entity
         
                 e.g. ?entity_definition_keyname=book
+                
+                
+        session_key (REQUIRED) - verifies that user is authenticated via get_session and links created entity
+                
+                                 to the given user allowing the user to query it later on
+                                 
+                e.g. ?session_key=asJGas236jsagHaj6Dahaf
                 
                 
         parent_entity_id - propagates rights from the parent and sets a parent-child relationship
@@ -295,24 +373,36 @@ class SaveEntity(myRequestHandler):
         
                 e.g. ?public=true
                 
+                
     Returns:
     
         entity_definition_keyname missing:
         
             HTTP status 400
             
+        user with given session_key missing:
+        
+            HTTP status 401
+            
         otherwise:
         
-            {'entity_id':ID}
+            {'entity_id':$entity_id}
+            
+            $entity_id = (int)
     
     """
     def get(self):       
         parent_entity_id = self.get_argument('parent_entity_id', default=None, strip=True)
         entity_definition_keyname = self.get_argument('entity_definition_keyname', default=None, strip=True)
         public = True if self.get_argument('public', default=None, strip=True) == 'true' else False
+        
+        user_id = self.get_user_by_session_key(self.get_argument('session_key',default=None,strip=True))['id']
+        
+        if not user_id:
+            raise web.HTTPError(401,"Unauthorized")            
       
         if entity_definition_keyname != None:
-            entity = db.Entity(user_locale=self.get_user_locale())
+            entity = db.Entity(user_locale=self.get_user_locale(),user_id)
             entity_id = entity.create(entity_definition_keyname=entity_definition_keyname, parent_entity_id=parent_entity_id)
             if public:
                 entity.set_public(entity_id,is_public=public)            
@@ -328,12 +418,14 @@ class SaveProperty(myRequestHandler):
     Creates new one if property_id = None, otherwise changes existing.
     Returns property ID.
     
-    #1  save_property?entity_id=$entity_id&property_definition_keyname=$property_Definition_keyname
+    #1  save_property?entity_id=$entity_id&session_key=$session_key
     
+        [&property_definition_keyname=$property_definition_keyname]
+        
         [&property_id=$property_id][&value=$value]
     
           
-    #2 save_property?properties=$properties
+    #2 save_property?properties=$properties&session_key=$session_key
     
         $properties = [
                         {
@@ -353,6 +445,7 @@ class SaveProperty(myRequestHandler):
                         }
                       ]
     
+    $session_key = (string)
     $entity_id = (int)
     $property_definition_keyname = (string)
     $property_id = (int)
@@ -361,14 +454,20 @@ class SaveProperty(myRequestHandler):
     
     Parameters:
     
+        session_key (REQUIRED) - verifies that user is authenticated via get_session and links property
+        
+                                 to the given user by recording its last modifier
+        
+    
         entity_id (REQUIRED) - ID of the entity that the given property belongs to
         
         
-        property_definition_keyname (REQUIRED) - type of property
-    
-            e.g. ?property_definition_keyname=textbook-picture
-            
-            
+        property_definition_keyname - type of property
+         |
+         |  e.g. ?property_definition_keyname=textbook-picture
+         |   
+         |-- 1 REQUIRED
+         |   
         property_id - ID of an existing property to be changed
         
         
@@ -394,13 +493,61 @@ class SaveProperty(myRequestHandler):
                 <input type="submit" name="submit" value="Submit" />
             </form>
         
+        
+    Returns:
+    
+        user with given session_key missing:
+        
+            HTTP status 401
+    
+        JSON format (#2 with properties parameter):
+        
+            properties missing:
+            
+                HTTP status 400
+                
+            entity_id or property_definition_keyname and property_id missing in any of json objects:
+            
+                HTTP status 400
+                
+            no properties were added/changed:
+            
+                HTTP status 404
+                
+            otherwise:
+            
+                [$property_id1,...,$property_idN]
+        
+                $property_id = (int)
+        
+        normal:
+    
+            entity_id or property_definition_keyname and property_id missing:
+            
+                HTTP status 400
+                
+            property was not added/changed:
+            
+                HTTP status 404
+                
+            otherwise:
+            
+                {'property_id':$property_id}
+                
+                $property_id = (int)
+    
     """
     def get(self):
         entity_id = self.get_argument('entity_id', default=None, strip=True)
         property_definition_keyname = self.get_argument('property_definition_keyname', default=None, strip=True)
-      
+        
+        user_id = self.get_user_by_session_key(self.get_argument('session_key',default=None,strip=True))['id']
+        
+        if not user_id:
+            raise web.HTTPError(401,"Unauthorized") 
+
         # if data is passed as json
-        if not entity_id and not property_definition_keyname:
+        if not (entity_id and (property_definition_keyname or property_id)):
             properties = self.get_argument('properties',default=None,strip=True)
             if not properties:
                 raise web.HTTPError(400, 'Invalid data passed')
@@ -410,7 +557,7 @@ class SaveProperty(myRequestHandler):
             if not isinstance(properties,list):
                 properties = [properties]
             
-            entity = db.Entity(user_locale=self.get_user_locale())
+            entity = db.Entity(user_locale=self.get_user_locale(),user_id)
             property_id_list = []
               
             for property in properties:
@@ -421,10 +568,13 @@ class SaveProperty(myRequestHandler):
                 uploaded_file_name = property.setdefault('file',None)
                 uploaded_file = self.request.files.get(uploaded_file_name,None) if uploaded_file_name != None else None
                 
-                if entity_id and property_definition_keyname:
+                if entity_id and (property_definition_keyname or property_id):
                     property_id_list.append(entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file))
                 else:
                     raise web.HTTPError(400, 'entity_id and property_definition_keyname required')
+            
+            if not property_id_list:
+                return self.missing()
             
             self.write(json.dumps(property_id_list))
             self.finish()
@@ -434,14 +584,16 @@ class SaveProperty(myRequestHandler):
             value = self.get_argument('value', default=None, strip=True)
             uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
           
-            entity = db.Entity(user_locale=self.get_user_locale())
-            if entity_id:
+            entity = db.Entity(user_locale=self.get_user_locale(),user_id)
+            if entity_id and (property_definition_keyname or property_id):
                 property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)    
+                if not property_id:
+                    return self.missing()
                 self.write({
                             'property_id':property_id
                 })
             else:
-                raise web.HTTPError(400, 'Entity ID required')
+                raise web.HTTPError(400, 'Entity ID and one of [property_definition_keyname,property_id] required')
 
 
 class GetFile(myRequestHandler):
