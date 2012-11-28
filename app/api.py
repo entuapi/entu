@@ -121,7 +121,7 @@ class Search (myRequestHandler):
         if not user_id:
             only_public = True
               
-        entity = db.Entity(user_locale=self.get_user_locale(),user_id)
+        entity = db.Entity(user_locale=self.get_user_locale(),user_id=user_id)
         
         result = entity.get(ids_only=False, search=keywords,
                             entity_definition_keyname=entity_definition, dataproperty=dataproperty, limit=limit,
@@ -209,7 +209,7 @@ class View (myRequestHandler):
         if not user_id:
             only_public = True       
         
-        entity = db.Entity(user_locale=self.get_user_locale(),self.get_user_by_session_key(session_key)['id'])
+        entity = db.Entity(user_locale=self.get_user_locale(),user_id=user_id)
        
         result = entity.get(entity_id=entity_id, limit=1, full_definition=full_definition, only_public=only_public)
        
@@ -402,7 +402,7 @@ class SaveEntity(myRequestHandler):
             raise web.HTTPError(401,"Unauthorized")            
       
         if entity_definition_keyname != None:
-            entity = db.Entity(user_locale=self.get_user_locale(),user_id)
+            entity = db.Entity(user_locale=self.get_user_locale(),user_id=user_id)
             entity_id = entity.create(entity_definition_keyname=entity_definition_keyname, parent_entity_id=parent_entity_id)
             if public:
                 entity.set_public(entity_id,is_public=public)            
@@ -557,7 +557,7 @@ class SaveProperty(myRequestHandler):
             if not isinstance(properties,list):
                 properties = [properties]
             
-            entity = db.Entity(user_locale=self.get_user_locale(),user_id)
+            entity = db.Entity(user_locale=self.get_user_locale(),user_id=user_id)
             property_id_list = []
               
             for property in properties:
@@ -584,7 +584,7 @@ class SaveProperty(myRequestHandler):
             value = self.get_argument('value', default=None, strip=True)
             uploaded_file = self.request.files.get('file', [])[0] if self.request.files.get('file', None) else None
           
-            entity = db.Entity(user_locale=self.get_user_locale(),user_id)
+            entity = db.Entity(user_locale=self.get_user_locale(),user_id=user_id)
             if entity_id and (property_definition_keyname or property_id):
                 property_id = entity.set_property(entity_id=entity_id, property_definition_keyname=property_definition_keyname, value=value, property_id=property_id, uploaded_file=uploaded_file)    
                 if not property_id:
@@ -623,7 +623,7 @@ class GetFile(myRequestHandler):
         if not file_id:
             raise web.HTTPError(400,'file_id required')
             
-        file = db.Entity(user_locale=self.get_user_locale(), user_id=self.current_user.id).get_file(file_id)
+        file = db.Entity(user_locale=self.get_user_locale()).get_file(file_id)
         
         if not file:
             return self.missing()
