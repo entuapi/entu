@@ -288,7 +288,7 @@ class GetAllowedChildren(myRequestHandler):
         
             HTTP status code 400
             
-        given entity_id has no allowed childs:
+        given entity_id has no allowed children:
         
             HTTP status code 404
     
@@ -620,8 +620,8 @@ class GetFile(myRequestHandler):
         
         file_id = self.get_argument('file_id',default=None,strip=True)
             
-        if not file:
-            return self.missing()    
+        if not file_id:
+            raise web.HTTPError(400,'file_id required')
             
         file = db.Entity(user_locale=self.get_user_locale(), user_id=self.current_user.id).get_file(file_id)
         
