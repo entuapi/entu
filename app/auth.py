@@ -228,22 +228,23 @@ class AuthTwitter(myRequestHandler, auth.TwitterMixin):
         })
 
 
-class Exit(myRequestHandler):
+class Logout(myRequestHandler):
     """
     Log out.
 
     """
     def get(self):
-        redirect_url = '/'
-        if self.current_user:
-            if self.current_user.provider == 'google':
-                redirect_url = 'https://www.google.com/accounts/logout'
-            if self.current_user.provider == 'application':
-                redirect_url = '/application'
-
-        #self.clear_cookie('session')
-        self.redirect(redirect_url)
-
+        
+        session_key = self.get_argument('session_key',default=None,strip=True)
+        
+        if not session_key:
+            web.HTTPError(401,'Unauthorized')
+            
+        response = db.Entity(user_locale=self.get_user_locale()).end_session(session_key)
+    
+        if not response:
+            raise web.HTTPError(500,'No session with given session_key existing')
+        self.finish()
 
 def LoginUser(rh, user):
     """
@@ -288,5 +289,5 @@ handlers = [
     ('/auth/idcard', AuthIDcard),
     ('/auth/twitter', AuthTwitter),
     ('/auth/(.*)', AuthOAuth2),
-    ('/exit', Exit),
+    ('/logout', Logout),
 ]

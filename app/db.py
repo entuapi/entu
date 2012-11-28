@@ -1100,6 +1100,16 @@ class Entity():
         self.db.execute('UPDATE entity SET deleted = NOW(), deleted_by = %s WHERE id = %s;', self.created_by, entity_id)
 
 
+    def end_session(self,session_key):
+        
+        """
+        Ends given session identified by session_key by emptying respective user_profile entry's session field.
+        Returns None if missing session_key, otherwise returns changed entry's id.
+        
+        """
+
+        return db.execute('UPDATE user_profile SET session = NULL WHERE session = \'%s\';', session_key)
+
 
 class User():
     """
