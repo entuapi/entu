@@ -664,12 +664,12 @@ def datetime_to_ISO8601(entity_list):
                                                 datetime_obj.hour,datetime_obj.minute,datetime_obj.second)
        
 handlers = [
-    ('/save_entity', SaveEntity),
-    ('/view', View),
-    ('/search', Search),
-    ('/save_property', SaveProperty),
-    ('/get_entity_properties', GetEntityProperties),
-    ('/get_allowed_childs',GetAllowedChilds),
-    ('/get_file',GetFile),
-    ('/get_session',GetSession)
+    ('/api/save_entity', SaveEntity),
+    ('/api/view', View),
+    ('/api/search', Search),
+    ('/api/save_property', SaveProperty),
+    ('/api/get_entity_properties', GetEntityProperties),
+    ('/api/get_allowed_childs',GetAllowedChilds),
+    ('/api/get_file',GetFile),
+    ('/api/get_session',GetSession)
 ]
